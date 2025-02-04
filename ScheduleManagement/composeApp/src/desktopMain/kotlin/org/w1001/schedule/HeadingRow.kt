@@ -1,18 +1,20 @@
 package org.w1001.schedule
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -23,39 +25,38 @@ fun HeadingRow(
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
 ) {
     if (workTime == 1) {
+        Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
         Row(horizontalArrangement = Arrangement.Start) {
             DayBox()
             ColumnBox(
                 horizontalScrollState,
                 columns,
-                cellSize.value.width * 3,
-                cellSize.value.height,
-                cellSize.value.width,
+                workTime,
                 3,
                 calcCellBindings
             )
         }
+        Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
     } else {
+        Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
         Row(horizontalArrangement = Arrangement.Start) {
             DayBox()
             ColumnBox(
                 horizontalScrollState,
                 columns,
-                cellSize.value.width * 5 + 5.dp,
-                cellSize.value.height,
-                cellSize.value.width,
+                workTime,
                 5,
                 calcCellBindings
             )
         }
+        Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
     }
 }
 
 @Composable
 private fun DayBox() {
     BoxWithConstraints(
-        Modifier.size(cellSize.value)
-//                            .background(Color.Red)
+        Modifier.size(cellSize.value).clip(CircleShape).background(Color.LightGray)
     ) {
         val fontSize = with(LocalDensity.current) { (maxWidth / 3).toSp() }
         Text(
@@ -75,19 +76,19 @@ private fun DayBox() {
 private fun ColumnBox(
     horizontalScrollState: ScrollState,
     columns: Int,
-    width: Dp,
-    height: Dp,
-    cellWidth: Dp,
-//    cellHeight: Dp,
+    workTime: Int,
     fontSizeMultiplier: Int,
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
 ) {
+    val width = if (workTime == 1) cellSize.value.width * 3 else cellSize.value.width * 5 + 5.dp
+    val height = cellSize.value.height
+
     Row(Modifier.horizontalScroll(horizontalScrollState)) {
         Spacer(modifier = Modifier.width(10.dp))
         for (j in 0 until columns) {
             BoxWithConstraints(
-                Modifier.size(width, height)
-//                                        .background(Color.Red)
+                Modifier.size(width, height).clip(CircleShape)
+                    .background(Color.LightGray)
             ) {
                 val fontSize = with(LocalDensity.current) { (maxWidth / (3 * fontSizeMultiplier)).toSp() }
                 Row(
@@ -95,7 +96,8 @@ private fun ColumnBox(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(cellWidth * 2, height)) {
+                    val calculatedWidth = if (workTime == 1) cellSize.value.width * 2 else cellSize.value.width * 4 + 5.dp
+                    Box(modifier = Modifier.size(calculatedWidth, height)) {
                         Text(
                             columnNames[j].value + ":",
                             modifier = Modifier.align(Alignment.Center),
@@ -109,7 +111,7 @@ private fun ColumnBox(
                     }
 
                     val sum = calcCellBindings[j]?.sumOf { it.value }
-                    Box(modifier = Modifier.size(cellWidth, height)) {
+                    Box(modifier = Modifier.size(cellSize.value.width, height)) {
                         Text(
                             sum.toString(),
                             modifier = Modifier.align(Alignment.Center),
