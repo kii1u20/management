@@ -13,7 +13,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import org.w1001.schedule.cells.*
+import org.w1001.schedule.cells.calcCell
+import org.w1001.schedule.cells.mergedCell
+import org.w1001.schedule.cells.spreadsheetCell
 
 data class CellData(var content: MutableState<String>)
 
@@ -53,6 +55,14 @@ fun App(
             }
         }
     }
+    val calcCellBindings = remember {
+        // Initialize with all bindings upfront
+        hashMapOf<Int, MutableList<MutableState<Int>>>().apply {
+            for (group in 0 until columns) {
+                this[group] = MutableList(31) { mutableStateOf(0) }
+            }
+        }
+    }
 
     MaterialTheme {
         Row(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
@@ -62,7 +72,7 @@ fun App(
             })
         }) {
             Column(Modifier.weight(0.7f)) {
-                HeadingRow(workTime = workTime, columns = columns, horizontalScrollState = horizontalScrollState)
+                HeadingRow(workTime = workTime, columns = columns, horizontalScrollState = horizontalScrollState, calcCellBindings = calcCellBindings)
 
                 Row() {
                     Column(
@@ -120,6 +130,9 @@ fun App(
                                             }
                                         }
                                     }
+
+                                    val groupBindings = calcCellBindings[group]!!
+                                    val calcBinding = groupBindings[i]
                                     // Insert the calculated cell (which is not editable).
                                     if (workTime == 1) {
                                         val simpleCalc = CalcStep.Calculation(
@@ -131,6 +144,7 @@ fun App(
                                             modifier = Modifier.size(cellSize.value),
                                             calculation = simpleCalc,
                                             cells = cells,
+                                            resultBinding = calcBinding
                                         )
                                     } else {
                                         val complexCalc = CalcStep.Calculation(
@@ -150,6 +164,7 @@ fun App(
                                             modifier = Modifier.size(cellSize.value),
                                             calculation = complexCalc,
                                             cells = cells,
+                                            resultBinding = calcBinding
                                         )
                                     }
                                     if (group < columns - 1) {

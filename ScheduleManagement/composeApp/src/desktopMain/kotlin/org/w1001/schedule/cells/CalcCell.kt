@@ -3,42 +3,21 @@ package org.w1001.schedule.cells
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.w1001.schedule.CalcStep
 import org.w1001.schedule.CellData
-import org.w1001.schedule.Operation
-
-// Represents a cell reference (row and column)
-data class CellRef(val row: Int, val col: Int)
-
-// Represents a calculation step
-sealed class CalcStep {
-    data class CellValue(val cellRef: CellRef) : CalcStep()
-    data class Calculation(val left: CalcStep, val right: CalcStep, val operation: Operation) : CalcStep()
-}
+import org.w1001.schedule.MathEngine.Companion.evaluateStep
 
 val specialCharMap = mapOf(
     "A" to 8,
     // Add other special characters and their values here
 )
-
-fun evaluateStep(step: CalcStep, cells: List<List<CellData>>): Int {
-    return when (step) {
-        is CalcStep.CellValue -> {
-            val content = cells[step.cellRef.row][step.cellRef.col].content.value
-            content.toIntOrNull() ?: specialCharMap[content] ?: 0
-        }
-        is CalcStep.Calculation -> {
-            val leftValue = evaluateStep(step.left, cells)
-            val rightValue = evaluateStep(step.right, cells)
-            step.operation.execute(leftValue, rightValue)
-        }
-    }
-}
 
 @Composable
 fun calcCell(
@@ -49,6 +28,7 @@ fun calcCell(
     textColor: Color = Color.Black,
     calculation: CalcStep,
     cells: List<List<CellData>>,
+    resultBinding: MutableState<Int>? = null // new binding parameter
 ) {
     Cell(
         modifier = modifier,
@@ -64,6 +44,8 @@ fun calcCell(
         } catch (e: Exception) {
             0
         }
+
+        resultBinding?.value = result
 
         Text(
             result.toString(),
