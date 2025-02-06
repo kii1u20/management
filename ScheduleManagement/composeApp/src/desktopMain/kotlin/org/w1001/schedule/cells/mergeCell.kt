@@ -34,6 +34,14 @@ fun mergedCell(
     cornerRadius: Dp = 0.dp
 ) {
 
+    val textFieldRef = remember { FocusRequester() }
+
+    LaunchedEffect(isSelected) {
+        if (isSelected) {
+            textFieldRef.requestFocus()
+        }
+    }
+
     LaunchedEffect(cellDataList) {
         cellDataList.forEach { it.content.value = "" }
         cellDataList.last().content.value = value
@@ -49,7 +57,6 @@ fun mergedCell(
         )
     }
     val source = remember { MutableInteractionSource() }
-    val textFieldRef = remember { FocusRequester() }
 
     Cell(
         modifier = modifier,
@@ -92,7 +99,7 @@ fun mergedCell(
 
         if (source.collectIsPressedAsState().value) {
             onClick()
-            textFieldRef.requestFocus()
+//            textFieldRef.requestFocus()
         }
     }
 }

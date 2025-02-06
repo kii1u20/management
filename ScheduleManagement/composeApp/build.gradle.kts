@@ -16,6 +16,8 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
+            implementation("androidx.compose.material3:material3:1.3.1")
+            implementation("dev.chrisbanes.haze:haze:1.3.0")
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -25,6 +27,7 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation("dev.chrisbanes.haze:haze:1.3.0")
         }
     }
 }

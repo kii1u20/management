@@ -10,6 +10,22 @@ sealed class CalcStep {
     data class Calculation(val left: CalcStep, val right: CalcStep, val operation: Operation) : CalcStep()
 }
 
+abstract class Operation {
+    abstract fun execute(a: Int, b: Int): Int
+}
+
+class PlusOperation : Operation() {
+    override fun execute(a: Int, b: Int): Int {
+        return a + b
+    }
+}
+
+class MinusOperation : Operation() {
+    override fun execute(a: Int, b: Int): Int {
+        return b - a
+    }
+}
+
 class MathEngine {
     companion object {
         fun evaluateStep(step: CalcStep, cells: List<List<CellData>>): Int {

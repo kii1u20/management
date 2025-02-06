@@ -19,22 +19,6 @@ import org.w1001.schedule.cells.spreadsheetCell
 
 data class CellData(var content: MutableState<String>)
 
-abstract class Operation {
-    abstract fun execute(a: Int, b: Int): Int
-}
-
-class PlusOperation : Operation() {
-    override fun execute(a: Int, b: Int): Int {
-        return a + b
-    }
-}
-
-class MinusOperation : Operation() {
-    override fun execute(a: Int, b: Int): Int {
-        return b - a
-    }
-}
-
 val cellSize: MutableState<DpSize> = mutableStateOf(DpSize(50.dp, 25.dp))
 
 val specialMergeSet = hashSetOf("A", "B", "C") // add other special values as needed
@@ -72,7 +56,12 @@ fun App(
             })
         }) {
             Column(Modifier.weight(0.7f)) {
-                HeadingRow(workTime = workTime, columns = columns, horizontalScrollState = horizontalScrollState, calcCellBindings = calcCellBindings)
+                HeadingRow(
+                    workTime = workTime,
+                    columns = columns,
+                    horizontalScrollState = horizontalScrollState,
+                    calcCellBindings = calcCellBindings
+                )
 
                 Row() {
                     Column(
@@ -80,13 +69,7 @@ fun App(
                         horizontalAlignment = Alignment.Start
                     ) {
                         for (i in cells.indices) {
-                            spreadsheetCell(
-                                cellData = CellData(mutableStateOf("${i + 1}")),
-                                isSelected = if ((selectedCell?.first ?: false) == i) true else false,
-                                onClick = {},
-                                enabled = false,
-                                modifier = Modifier.size(cellSize.value),
-                            )
+                            createDayCell(i, selectedCell)
                         }
                     }
                     Column(
@@ -105,68 +88,48 @@ fun App(
                                     val specialValue = groupCells.firstOrNull { specialMergeSet.contains(it.content.value) }?.content?.value
                                     if (specialValue != null) {
                                         // Render a mergedCell for the entire group, passing the special value.
-                                        val size = if (workTime == 1) {cellSize.value.width * groupSize} else {cellSize.value.width * groupSize + 5.dp}
-                                        mergedCell(
-                                            cellDataList = groupCells,
-                                            isSelected = selectedCell == Pair(i, group * groupSize),
-                                            onClick = { selectedCell = Pair(i, group * groupSize) },
-                                            modifier = Modifier.size(size, cellSize.value.height),
-                                            value = specialValue
-                                        )
+                                        val size = if (workTime == 1) {
+                                            cellSize.value.width * groupSize
+                                        } else {
+                                            cellSize.value.width * groupSize + 5.dp
+                                        }
+                                        RightClickMenu(cellDataGroup = groupCells, onRightClick = {
+                                            selectedCell = Pair(i, group * groupSize + groupSize - 1)
+                                            focusManager.clearFocus()
+                                        }) {
+                                            mergedCell(
+                                                cellDataList = groupCells,
+                                                isSelected = selectedCell == Pair(i, group * groupSize + groupSize - 1),
+                                                onClick = { selectedCell = Pair(i, group * groupSize + groupSize - 1) },
+                                                modifier = Modifier.size(size, cellSize.value.height),
+                                                value = specialValue
+                                            )
+                                        }
                                     } else {
                                         // Render each cell individually.
                                         groupCells.forEachIndexed { idx, cell ->
-                                            RightClickMenu(cellData = cell, content = {
+                                            RightClickMenu(cellDataGroup = groupCells, onRightClick = {
+                                                selectedCell = Pair(i, group * groupSize + groupSize - 1)
+                                                focusManager.clearFocus()
+                                            }) {
                                                 spreadsheetCell(
                                                     cellData = cell,
                                                     isSelected = selectedCell == Pair(i, group * groupSize + idx),
                                                     onClick = { selectedCell = Pair(i, group * groupSize + idx) },
                                                     enabled = true,
                                                     modifier = Modifier.size(cellSize.value)
+//                                                        .recomposeHighlighter()
                                                 )
-                                            })
+                                            }
+
                                             if (workTime == 2 && idx == groupSize / 2 - 1) {
                                                 Spacer(modifier = Modifier.width(5.dp))
                                             }
                                         }
                                     }
 
-                                    val groupBindings = calcCellBindings[group]!!
-                                    val calcBinding = groupBindings[i]
-                                    // Insert the calculated cell (which is not editable).
-                                    if (workTime == 1) {
-                                        val simpleCalc = CalcStep.Calculation(
-                                            CalcStep.CellValue(CellRef(i, group * groupSize)),
-                                            CalcStep.CellValue(CellRef(i, group * groupSize + 1)),
-                                            MinusOperation()
-                                        )
-                                        calcCell(
-                                            modifier = Modifier.size(cellSize.value),
-                                            calculation = simpleCalc,
-                                            cells = cells,
-                                            resultBinding = calcBinding
-                                        )
-                                    } else {
-                                        val complexCalc = CalcStep.Calculation(
-                                            CalcStep.Calculation(
-                                                CalcStep.CellValue(CellRef(i, group * groupSize)),
-                                                CalcStep.CellValue(CellRef(i, group * groupSize + 1)),
-                                                MinusOperation()
-                                            ),
-                                            CalcStep.Calculation(
-                                                CalcStep.CellValue(CellRef(i, group * groupSize + 2)),
-                                                CalcStep.CellValue(CellRef(i, group * groupSize + 3)),
-                                                MinusOperation()
-                                            ),
-                                            PlusOperation()
-                                        )
-                                        calcCell(
-                                            modifier = Modifier.size(cellSize.value),
-                                            calculation = complexCalc,
-                                            cells = cells,
-                                            resultBinding = calcBinding
-                                        )
-                                    }
+                                    createCalculationColumn(calcCellBindings, group, i, cells, workTime, groupSize)
+
                                     if (group < columns - 1) {
                                         Spacer(modifier = Modifier.width(10.dp))
                                     }
@@ -178,6 +141,64 @@ fun App(
             }
             InfoPane(cellSize = cellSize, modifier = Modifier.weight(0.3f))
         }
+    }
+}
+
+@Composable
+fun createDayCell(row: Int, selectedCell: Pair<Int, Int>?) {
+    spreadsheetCell(
+        cellData = CellData(mutableStateOf("${row + 1}")),
+        isSelected = if ((selectedCell?.first ?: false) == row) true else false,
+        onClick = {},
+        enabled = false,
+        modifier = Modifier.size(cellSize.value),
+    )
+}
+
+@Composable
+fun createCalculationColumn(
+    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    group: Int,
+    i: Int,
+    cells: List<List<CellData>>,
+    workTime: Int,
+    groupSize: Int
+) {
+    val groupBindings = calcCellBindings[group]!!
+    val calcBinding = groupBindings[i]
+    // Insert the calculated cell (which is not editable).
+    if (workTime == 1) {
+        val simpleCalc = CalcStep.Calculation(
+            CalcStep.CellValue(CellRef(i, group * groupSize)),
+            CalcStep.CellValue(CellRef(i, group * groupSize + 1)),
+            MinusOperation()
+        )
+        calcCell(
+            modifier = Modifier.size(cellSize.value),
+            calculation = simpleCalc,
+            cells = cells,
+            resultBinding = calcBinding
+        )
+    } else {
+        val complexCalc = CalcStep.Calculation(
+            CalcStep.Calculation(
+                CalcStep.CellValue(CellRef(i, group * groupSize)),
+                CalcStep.CellValue(CellRef(i, group * groupSize + 1)),
+                MinusOperation()
+            ),
+            CalcStep.Calculation(
+                CalcStep.CellValue(CellRef(i, group * groupSize + 2)),
+                CalcStep.CellValue(CellRef(i, group * groupSize + 3)),
+                MinusOperation()
+            ),
+            PlusOperation()
+        )
+        calcCell(
+            modifier = Modifier.size(cellSize.value),
+            calculation = complexCalc,
+            cells = cells,
+            resultBinding = calcBinding
+        )
     }
 }
 

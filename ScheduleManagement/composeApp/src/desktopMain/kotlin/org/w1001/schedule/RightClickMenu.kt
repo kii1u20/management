@@ -12,8 +12,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RightClickMenu(
-    cellData: CellData,
+    cellDataGroup: List<CellData>,
     onAbsence: (() -> Unit)? = null,
+    onBreak: (() -> Unit)? = null,
+    onRightClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
     CompositionLocalProvider(
@@ -26,11 +28,21 @@ fun RightClickMenu(
                     items = {
                         listOf(
                             ContextMenuItem("Absence") {
+                                onRightClick()
                                 // If an onAbsence callback is provided, call it.
                                 onAbsence?.invoke() ?: run {
                                     // Default action if not provided.
                                     println("Absence clicked for text: ${textManager.selectedText}")
-                                    cellData.content.value = "A"
+                                    cellDataGroup.last().content.value = "A"
+                                }
+                            },
+                            ContextMenuItem("Break") {
+                                onRightClick()
+                                // If an onAbsence callback is provided, call it.
+                                onBreak?.invoke() ?: run {
+                                    // Default action if not provided.
+                                    println("Break clicked for text: ${textManager.selectedText}")
+                                    cellDataGroup.last().content.value = "B"
                                 }
                             }
                         )

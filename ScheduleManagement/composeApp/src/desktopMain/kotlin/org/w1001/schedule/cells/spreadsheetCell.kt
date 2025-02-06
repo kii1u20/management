@@ -26,6 +26,7 @@ fun spreadsheetCell(
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+
     backgroundColor: Color = Color.White,
     borderColor: Color = Color.Gray,
     textColor: Color = Color.Black,
@@ -42,6 +43,12 @@ fun spreadsheetCell(
     }
     val source = remember { MutableInteractionSource() }
     val textFieldRef = remember { FocusRequester() }
+
+    LaunchedEffect(isSelected) {
+        if (isSelected) {
+            textFieldRef.requestFocus()
+        }
+    }
 
     Cell(
         modifier = modifier,
@@ -81,7 +88,7 @@ fun spreadsheetCell(
 
         if (source.collectIsPressedAsState().value) {
             onClick()
-            textFieldRef.requestFocus()
+//            textFieldRef.requestFocus()
         }
     }
 }

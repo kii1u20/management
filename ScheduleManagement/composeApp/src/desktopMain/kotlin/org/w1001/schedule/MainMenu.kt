@@ -1,7 +1,8 @@
 package org.w1001.schedule
 
+//import androidx.compose.material.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,7 +68,7 @@ fun ScheduleSetupUI(
             if (showError) {
                 Text(
                     text = "Please enter a valid positive integer.",
-                    color = MaterialTheme.colors.error
+                    color = MaterialTheme.colorScheme.error
                 )
             } else {
                 ColumnNamesInput(columns.value.toInt(), columnNames)
