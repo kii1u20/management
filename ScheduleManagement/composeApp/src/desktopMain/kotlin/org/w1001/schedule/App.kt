@@ -78,68 +78,96 @@ fun App(
                         horizontalAlignment = Alignment.Start
                     ) {
                         for (i in cells.indices) {
-                            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Start) {
-                                Spacer(modifier = Modifier.width(10.dp))
-                                val groupSize = if (workTime == 1) 2 else 4
-                                // There are "columns" groups in each row.
-                                for (group in 0 until columns) {
-                                    // Gather all cells within the group.
-                                    val groupCells = (0 until groupSize).map { idx -> cells[i][group * groupSize + idx] }
-                                    val specialValue = groupCells.firstOrNull { specialMergeSet.contains(it.content.value) }?.content?.value
-                                    if (specialValue != null) {
-                                        // Render a mergedCell for the entire group, passing the special value.
-                                        val size = if (workTime == 1) {
-                                            cellSize.value.width * groupSize
-                                        } else {
-                                            cellSize.value.width * groupSize + 5.dp
-                                        }
-                                        RightClickMenu(cellDataGroup = groupCells, onRightClick = {
-                                            selectedCell = Pair(i, group * groupSize + groupSize - 1)
-                                            focusManager.clearFocus()
-                                        }) {
-                                            mergedCell(
-                                                cellDataList = groupCells,
-                                                isSelected = selectedCell == Pair(i, group * groupSize + groupSize - 1),
-                                                onClick = { selectedCell = Pair(i, group * groupSize + groupSize - 1) },
-                                                modifier = Modifier.size(size, cellSize.value.height),
-                                                value = specialValue
-                                            )
-                                        }
-                                    } else {
-                                        // Render each cell individually.
-                                        groupCells.forEachIndexed { idx, cell ->
-                                            RightClickMenu(cellDataGroup = groupCells, onRightClick = {
-                                                selectedCell = Pair(i, group * groupSize + groupSize - 1)
-                                                focusManager.clearFocus()
-                                            }) {
-                                                spreadsheetCell(
-                                                    cellData = cell,
-                                                    isSelected = selectedCell == Pair(i, group * groupSize + idx),
-                                                    onClick = { selectedCell = Pair(i, group * groupSize + idx) },
-                                                    enabled = true,
-                                                    modifier = Modifier.size(cellSize.value)
-//                                                        .recomposeHighlighter()
-                                                )
-                                            }
-
-                                            if (workTime == 2 && idx == groupSize / 2 - 1) {
-                                                Spacer(modifier = Modifier.width(5.dp))
-                                            }
-                                        }
-                                    }
-
-                                    createCalculationColumn(calcCellBindings, group, i, cells, workTime, groupSize)
-
-                                    if (group < columns - 1) {
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                    }
-                                }
+                            key(i) { // Add key to help with recomposition
+                                ScheduleRow(
+                                    rowIndex = i,
+                                    cells = cells[i],
+                                    columns = columns,
+                                    workTime = workTime,
+                                    selectedCell = selectedCell,
+                                    onCellSelected = { selectedCell = it },
+                                    calcCellBindings = calcCellBindings
+                                )
                             }
                         }
                     }
                 }
             }
             InfoPane(cellSize = cellSize, modifier = Modifier.weight(0.3f))
+        }
+    }
+}
+
+// First add this new composable
+@Composable
+private fun ScheduleRow(
+    rowIndex: Int,
+    cells: List<CellData>,
+    columns: Int,
+    workTime: Int,
+    selectedCell: Pair<Int, Int>?,
+    onCellSelected: (Pair<Int, Int>) -> Unit,
+    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
+) {
+    Row(
+        Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Spacer(modifier = Modifier.width(10.dp))
+        val groupSize = if (workTime == 1) 2 else 4
+
+        for (group in 0 until columns) {
+            val groupCells = (0 until groupSize).map { idx -> cells[group * groupSize + idx] }
+            val specialValue = groupCells.firstOrNull { specialMergeSet.contains(it.content.value) }?.content?.value
+
+            if (specialValue != null) {
+                val size = if (workTime == 1) {
+                    cellSize.value.width * groupSize
+                } else {
+                    cellSize.value.width * groupSize + 5.dp
+                }
+                RightClickMenu(
+                    cellDataGroup = groupCells,
+                    onRightClick = {
+                        onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1))
+                    }
+                ) {
+                    mergedCell(
+                        cellDataList = groupCells,
+                        isSelected = selectedCell == Pair(rowIndex, group * groupSize + groupSize - 1),
+                        onClick = { onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1)) },
+                        modifier = Modifier.size(size, cellSize.value.height),
+                        value = specialValue
+                    )
+                }
+            } else {
+                groupCells.forEachIndexed { idx, cell ->
+                    RightClickMenu(
+                        cellDataGroup = groupCells,
+                        onRightClick = {
+                            onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1))
+                        }
+                    ) {
+                        spreadsheetCell(
+                            cellData = cell,
+                            isSelected = selectedCell == Pair(rowIndex, group * groupSize + idx),
+                            onClick = { onCellSelected(Pair(rowIndex, group * groupSize + idx)) },
+                            enabled = true,
+                            modifier = Modifier.size(cellSize.value)
+                        )
+                    }
+
+                    if (workTime == 2 && idx == groupSize / 2 - 1) {
+                        Spacer(modifier = Modifier.width(5.dp))
+                    }
+                }
+            }
+
+            createCalculationColumn(calcCellBindings, group, rowIndex, listOf(cells), workTime, groupSize)
+
+            if (group < columns - 1) {
+                Spacer(modifier = Modifier.width(10.dp))
+            }
         }
     }
 }
