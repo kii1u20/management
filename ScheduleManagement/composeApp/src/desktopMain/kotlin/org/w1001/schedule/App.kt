@@ -81,7 +81,7 @@ fun App(
                             key(i) { // Add key to help with recomposition
                                 ScheduleRow(
                                     rowIndex = i,
-                                    cells = cells[i],
+                                    cells = cells,
                                     columns = columns,
                                     workTime = workTime,
                                     selectedCell = selectedCell,
@@ -102,7 +102,7 @@ fun App(
 @Composable
 private fun ScheduleRow(
     rowIndex: Int,
-    cells: List<CellData>,
+    cells: List<List<CellData>>,
     columns: Int,
     workTime: Int,
     selectedCell: Pair<Int, Int>?,
@@ -117,7 +117,7 @@ private fun ScheduleRow(
         val groupSize = if (workTime == 1) 2 else 4
 
         for (group in 0 until columns) {
-            val groupCells = (0 until groupSize).map { idx -> cells[group * groupSize + idx] }
+            val groupCells = (0 until groupSize).map { idx -> cells[rowIndex][group * groupSize + idx] }
             val specialValue = groupCells.firstOrNull { specialMergeSet.contains(it.content.value) }?.content?.value
 
             if (specialValue != null) {
@@ -163,7 +163,7 @@ private fun ScheduleRow(
                 }
             }
 
-            createCalculationColumn(calcCellBindings, group, rowIndex, listOf(cells), workTime, groupSize)
+            createCalculationColumn(calcCellBindings, group, rowIndex, cells, workTime, groupSize)
 
             if (group < columns - 1) {
                 Spacer(modifier = Modifier.width(10.dp))
