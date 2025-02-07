@@ -99,7 +99,7 @@ fun App(
                                 type = "schedule",
                                 workTime = viewModel.workTime.value,
                                 cells = viewModel.cells,
-                                name = "Януари 2025",
+                                name = "Януари 2026",
                                 databaseName = "Pavlikeni",
                                 collectionName = "schedule",
                             )

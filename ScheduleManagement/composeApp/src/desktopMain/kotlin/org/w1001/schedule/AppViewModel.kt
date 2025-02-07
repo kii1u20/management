@@ -20,7 +20,7 @@ class AppViewModel {
     var currentDocumentId by mutableStateOf<ObjectId?>(null)
     val specialMergeSet = hashSetOf("A", "B", "C")
 
-    // Cells list // EXPERIENT THIS BEING MUTABLE LIST
+    // Cells list
     val cells = List(31) { row ->
         List(if (workTime.value == 1) numberOfColumns.value.toInt() * 2
         else numberOfColumns.value.toInt() * 4) { col ->

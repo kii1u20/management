@@ -82,6 +82,7 @@ fun LoadDocumentsDialog(
                         CircularProgressIndicator()
                     }
                 }
+
                 error != null -> Text("Error: $error")
                 documents.isEmpty() -> Text("No documents found")
                 else -> LazyColumn {
@@ -156,12 +157,18 @@ fun ScheduleSetupUI(
             ) {
                 RadioButton(
                     selected = viewModel.workTime.value == 1,
-                    onClick = { viewModel.workTime.value = 1 }
+                    onClick = {
+                        viewModel.workTime.value = 1
+                        recomputeCellsListSize(viewModel)
+                    }
                 )
                 Text("Single Work Time")
                 RadioButton(
                     selected = viewModel.workTime.value == 2,
-                    onClick = { viewModel.workTime.value = 2 }
+                    onClick = {
+                        viewModel.workTime.value = 2
+                        recomputeCellsListSize(viewModel)
+                    }
                 )
                 Text("Double Work Time")
             }
@@ -177,6 +184,18 @@ fun ScheduleSetupUI(
             }
         }
     }
+}
+
+fun recomputeCellsListSize(viewModel: AppViewModel) {
+    viewModel.cells.clear()
+    viewModel.cells.addAll(List(31) { row ->
+        List(
+            if (viewModel.workTime.value == 1) viewModel.numberOfColumns.value.toInt() * 2
+            else viewModel.numberOfColumns.value.toInt() * 4
+        ) { col ->
+            CellData(mutableStateOf(""))
+        }.toMutableStateList()
+    }.toMutableStateList())
 }
 
 @Composable
