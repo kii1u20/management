@@ -18,6 +18,8 @@ kotlin {
             implementation(compose.material)
             implementation("androidx.compose.material3:material3:1.3.1")
             implementation("dev.chrisbanes.haze:haze:1.3.0")
+            implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.0")
+            implementation("org.mongodb:bson-kotlinx:5.3.0")
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -28,6 +30,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation("dev.chrisbanes.haze:haze:1.3.0")
+            implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.0")
+            implementation("org.mongodb:bson-kotlinx:5.3.0")
         }
     }
 }

@@ -10,9 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import org.bson.types.ObjectId
 
 @Composable
-fun InfoPane(modifier: Modifier = Modifier, cellSize: MutableState<DpSize>) {
+fun InfoPane(
+    modifier: Modifier = Modifier, cellSize: MutableState<DpSize>, onSave: () -> Unit,
+    onLoad: (ObjectId) -> Unit,
+    viewModel: AppViewModel
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Text("Info Pane", textAlign = TextAlign.Center)
         Button(onClick = {
@@ -22,6 +27,7 @@ fun InfoPane(modifier: Modifier = Modifier, cellSize: MutableState<DpSize>) {
         }) {
             Text("Increase Cell Size")
         }
+
         Button(onClick = {
             cellSize.value = DpSize(
                 (cellSize.value.width - 10.dp).coerceAtLeast(10.dp), (cellSize.value.height - 5.dp).coerceAtLeast(5.dp)
@@ -31,9 +37,13 @@ fun InfoPane(modifier: Modifier = Modifier, cellSize: MutableState<DpSize>) {
         }
 
         Button(onClick = {
-            inMainMenu.value = true
+            viewModel.inMainMenu.value = true
         }) {
             Text("Main Menu")
+        }
+
+        Button(onClick = onSave) {
+            Text("Save")
         }
     }
 }

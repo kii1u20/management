@@ -2,6 +2,8 @@ package org.w1001.schedule
 
 //import androidx.compose.material.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,31 +12,103 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MainMenu(
-    inMainMenu: MutableState<Boolean>,
-    numberOfColumns: MutableState<String>,
-    workTimeType: MutableState<Int>,
-    columnNames: MutableList<MutableState<String>>
+    viewModel: AppViewModel
 ) {
+    var showLoadDialog by remember { mutableStateOf(false) }
+    val repository = remember { SpreadsheetRepository() }
+
     MaterialTheme {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Button(onClick = { inMainMenu.value = false }) {
-                Text("Exit Main Menu")
+            Row {
+                Button(onClick = { viewModel.inMainMenu.value = false }) {
+                    Text("Exit Main Menu")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { showLoadDialog = true }) {
+                    Text("Load")
+                }
             }
 
-            ScheduleSetupUI(numberOfColumns, workTimeType, columnNames)
+            ScheduleSetupUI(viewModel)
+
+            if (showLoadDialog) {
+                LoadDocumentsDialog(
+                    repository = repository,
+                    onDismiss = { showLoadDialog = false },
+                    onDocumentSelected = { document ->
+                        viewModel.loadDocument(document)
+                    }
+                )
+            }
         }
     }
 }
 
 @Composable
+fun LoadDocumentsDialog(
+    repository: SpreadsheetRepository,
+    onDismiss: () -> Unit,
+    onDocumentSelected: (SpreadsheetDocument) -> Unit
+) {
+    var documents by remember { mutableStateOf<List<SpreadsheetDocument>>(emptyList()) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        try {
+            isLoading = true
+            documents = repository.loadDocuments("Pavlikeni", "schedule")
+        } catch (e: Exception) {
+            error = e.message
+        } finally {
+            isLoading = false
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Load Document") },
+        text = {
+            when {
+                isLoading -> {
+                    Box(
+//                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                error != null -> Text("Error: $error")
+                documents.isEmpty() -> Text("No documents found")
+                else -> LazyColumn {
+                    items(documents) { doc ->
+                        TextButton(
+                            onClick = {
+                                onDocumentSelected(doc)
+                                onDismiss()
+                            }
+                        ) {
+                            Text(doc.name)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+@Composable
 fun ScheduleSetupUI(
-    columns: MutableState<String>,
-    workTime: MutableState<Int>,
-    columnNames: MutableList<MutableState<String>>
+    viewModel: AppViewModel
 ) {
     var isColumnValid by remember { mutableStateOf(true) }
     var showError by remember { mutableStateOf(false) }
@@ -47,17 +121,17 @@ fun ScheduleSetupUI(
         ) {
             Text("Enter the number of columns (must be a positive integer):")
             OutlinedTextField(
-                value = columns.value,
+                value = viewModel.numberOfColumns.value,
                 onValueChange = { input ->
                     // Validate input and ensure it's a positive integer
                     isColumnValid = input.toIntOrNull()?.let { it > 0 } ?: false
-                    columns.value = input
+                    viewModel.numberOfColumns.value = input
                     showError = !isColumnValid
 
                     if (isColumnValid) {
-                        columnNames.clear()
+                        viewModel.columnNames.clear()
                         repeat(input.toInt()) {
-                            columnNames.add(mutableStateOf(""))
+                            viewModel.columnNames.add(mutableStateOf(""))
                         }
                     }
                 },
@@ -71,7 +145,7 @@ fun ScheduleSetupUI(
                     color = MaterialTheme.colorScheme.error
                 )
             } else {
-                ColumnNamesInput(columns.value.toInt(), columnNames)
+                ColumnNamesInput(viewModel.numberOfColumns.value.toInt(), viewModel.columnNames)
             }
 
 
@@ -81,20 +155,20 @@ fun ScheduleSetupUI(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
-                    selected = workTime.value == 1,
-                    onClick = { workTime.value = 1 }
+                    selected = viewModel.workTime.value == 1,
+                    onClick = { viewModel.workTime.value = 1 }
                 )
                 Text("Single Work Time")
                 RadioButton(
-                    selected = workTime.value == 2,
-                    onClick = { workTime.value = 2 }
+                    selected = viewModel.workTime.value == 2,
+                    onClick = { viewModel.workTime.value = 2 }
                 )
                 Text("Double Work Time")
             }
 
             Button(onClick = {
                 if (isColumnValid) {
-                    inMainMenu.value = false
+                    viewModel.inMainMenu.value = false
                 } else {
                     showError = true
                 }

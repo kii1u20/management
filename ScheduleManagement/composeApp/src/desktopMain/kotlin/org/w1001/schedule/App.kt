@@ -13,42 +13,36 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.bson.types.ObjectId
 import org.w1001.schedule.cells.calcCell
 import org.w1001.schedule.cells.mergedCell
 import org.w1001.schedule.cells.spreadsheetCell
 
-data class CellData(var content: MutableState<String>)
-
-val cellSize: MutableState<DpSize> = mutableStateOf(DpSize(50.dp, 25.dp))
-
-val specialMergeSet = hashSetOf("A", "B", "C") // add other special values as needed
+val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
 
 @Composable
 fun App(
-    columns: Int, workTime: Int, columnNames: MutableList<MutableState<String>>
+    viewModel: AppViewModel
 ) {
     var selectedCell by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     val focusManager = LocalFocusManager.current
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
-    val cells = remember {
-        List(31) { row ->
-            // Changed: only allocate editable cells (2 per group for workTime==1, 4 per group for workTime==2)
-            List(if (workTime == 1) columns * 2 else columns * 4) { col ->
-                CellData(mutableStateOf(""))
-            }
-        }
-    }
-    val calcCellBindings = remember {
-        // Initialize with all bindings upfront
-        hashMapOf<Int, MutableList<MutableState<Int>>>().apply {
-            for (group in 0 until columns) {
-                this[group] = MutableList(31) { mutableStateOf(0) }
-            }
-        }
-    }
+
+    val scope = rememberCoroutineScope()
+    val repository = remember { SpreadsheetRepository() }
+    var currentDocumentId by remember { mutableStateOf<ObjectId?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     MaterialTheme {
+        if (errorMessage != null) {
+            WarningDialog(
+                message = errorMessage!!,
+                onDismiss = { errorMessage = null }
+            )
+        }
+
         Row(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
             detectTapGestures(onTap = {
                 focusManager.clearFocus()
@@ -57,10 +51,11 @@ fun App(
         }) {
             Column(Modifier.weight(0.7f)) {
                 HeadingRow(
-                    workTime = workTime,
-                    columns = columns,
+                    workTime = viewModel.workTime.value,
+                    columns = viewModel.numberOfColumns.value.toInt(),
                     horizontalScrollState = horizontalScrollState,
-                    calcCellBindings = calcCellBindings
+                    calcCellBindings = viewModel.calcCellBindings,
+                    viewModel = viewModel
                 )
 
                 Row() {
@@ -68,7 +63,7 @@ fun App(
                         Modifier.verticalScroll(verticalScrollState), // Make the column scrollable
                         horizontalAlignment = Alignment.Start
                     ) {
-                        for (i in cells.indices) {
+                        for (i in viewModel.cells.indices) {
                             createDayCell(i, selectedCell)
                         }
                     }
@@ -77,23 +72,54 @@ fun App(
                             .horizontalScroll(horizontalScrollState),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        for (i in cells.indices) {
+                        for (i in viewModel.cells.indices) {
                             key(i) { // Add key to help with recomposition
                                 ScheduleRow(
                                     rowIndex = i,
-                                    cells = cells,
-                                    columns = columns,
-                                    workTime = workTime,
+                                    cells = viewModel.cells,
+                                    columns = viewModel.numberOfColumns.value.toInt(),
+                                    workTime = viewModel.workTime.value,
                                     selectedCell = selectedCell,
                                     onCellSelected = { selectedCell = it },
-                                    calcCellBindings = calcCellBindings
+                                    calcCellBindings = viewModel.calcCellBindings,
+                                    viewModel = viewModel
                                 )
                             }
                         }
                     }
                 }
             }
-            InfoPane(cellSize = cellSize, modifier = Modifier.weight(0.3f))
+            InfoPane(
+                cellSize = cellSize,
+                viewModel = viewModel,
+                onSave = {
+                    scope.launch {
+                        try {
+                            currentDocumentId = repository.saveSpreadsheet(
+                                type = "schedule",
+                                workTime = viewModel.workTime.value,
+                                cells = viewModel.cells,
+                                name = "Януари 2025",
+                                databaseName = "Pavlikeni",
+                                collectionName = "schedule",
+                            )
+                        } catch (e: Exception) {
+                            errorMessage = e.message ?: "An unknown error occurred"
+                        }
+                    }
+                },
+                onLoad = { id ->
+//                    scope.launch {
+//                        repository.loadSpreadsheet(id)?.let { doc ->
+//                            cells.clear()
+//                            cells.addAll(doc.cells.map { row ->
+//                                row.map { CellData(mutableStateOf(it)) }
+//                            })
+//                        }
+//                    }
+                },
+                modifier = Modifier.weight(0.3f)
+            )
         }
     }
 }
@@ -107,7 +133,8 @@ private fun ScheduleRow(
     workTime: Int,
     selectedCell: Pair<Int, Int>?,
     onCellSelected: (Pair<Int, Int>) -> Unit,
-    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
+    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    viewModel: AppViewModel
 ) {
     Row(
         Modifier.fillMaxSize(),
@@ -118,7 +145,7 @@ private fun ScheduleRow(
 
         for (group in 0 until columns) {
             val groupCells = (0 until groupSize).map { idx -> cells[rowIndex][group * groupSize + idx] }
-            val specialValue = groupCells.firstOrNull { specialMergeSet.contains(it.content.value) }?.content?.value
+            val specialValue = groupCells.firstOrNull { viewModel.specialMergeSet.contains(it.content.value) }?.content?.value
 
             if (specialValue != null) {
                 val size = if (workTime == 1) {
@@ -154,6 +181,7 @@ private fun ScheduleRow(
                             onClick = { onCellSelected(Pair(rowIndex, group * groupSize + idx)) },
                             enabled = true,
                             modifier = Modifier.size(cellSize.value)
+//                                .recomposeHighlighter()
                         )
                     }
 

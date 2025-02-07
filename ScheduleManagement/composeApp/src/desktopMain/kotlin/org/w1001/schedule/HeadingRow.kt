@@ -22,7 +22,8 @@ fun HeadingRow(
     workTime: Int,
     columns: Int,
     horizontalScrollState: ScrollState,
-    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
+    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    viewModel: AppViewModel
 ) {
     if (workTime == 1) {
         Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
@@ -33,7 +34,8 @@ fun HeadingRow(
                 columns,
                 workTime,
                 3,
-                calcCellBindings
+                calcCellBindings,
+                viewModel
             )
         }
         Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
@@ -46,7 +48,8 @@ fun HeadingRow(
                 columns,
                 workTime,
                 5,
-                calcCellBindings
+                calcCellBindings,
+                viewModel
             )
         }
         Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
@@ -78,7 +81,8 @@ private fun ColumnBox(
     columns: Int,
     workTime: Int,
     fontSizeMultiplier: Int,
-    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
+    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    viewModel: AppViewModel
 ) {
     val width = if (workTime == 1) cellSize.value.width * 3 else cellSize.value.width * 5 + 5.dp
     val height = cellSize.value.height
@@ -99,7 +103,7 @@ private fun ColumnBox(
                     val calculatedWidth = if (workTime == 1) cellSize.value.width * 2 else cellSize.value.width * 4 + 5.dp
                     Box(modifier = Modifier.size(calculatedWidth, height)) {
                         Text(
-                            columnNames[j].value + ":",
+                            viewModel.columnNames[j].value + ":",
                             modifier = Modifier.align(Alignment.Center),
                             style = MaterialTheme.typography.body1.copy(
                                 color = Color.Black,
