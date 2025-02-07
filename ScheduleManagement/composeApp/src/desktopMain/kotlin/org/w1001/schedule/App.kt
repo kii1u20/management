@@ -36,6 +36,10 @@ fun App(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     MaterialTheme {
+        if (viewModel.isSaving) {
+            LoadingDialog("Saving document...")
+        }
+
         if (errorMessage != null) {
             WarningDialog(
                 message = errorMessage!!,
@@ -98,6 +102,7 @@ fun App(
                             viewModel.saveDocument()
                         } catch (e: Exception) {
                             errorMessage = e.message ?: "An unknown error occurred"
+                            viewModel.isSaving = false
                         }
                     }
                 },

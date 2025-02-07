@@ -6,6 +6,8 @@ import org.bson.types.ObjectId
 data class CellData(var content: MutableState<String>)
 
 class AppViewModel {
+    var isSaving by mutableStateOf(false)
+
     // From main.kt
     val inMainMenu = mutableStateOf(true)
     val numberOfColumns = mutableStateOf("3")
@@ -72,6 +74,7 @@ class AppViewModel {
     }
 
     suspend fun saveDocument() {
+        isSaving = true
         if (isDocumentLoaded && currentDocumentId != null) {
             repository.updateSpreadsheet(
                 id = currentDocumentId!!,
@@ -87,13 +90,13 @@ class AppViewModel {
                 type = "schedule",
                 workTime = workTime.value,
                 cells = cells,
-                name = "Януари 2026",
+                name = "Януари 2027",
                 databaseName = "Pavlikeni",
                 collectionName = "schedule"
             )
             isDocumentLoaded = true
-            loadedDocumentName = "Януари 2026"
+            loadedDocumentName = "Януари 2027"
         }
-
+        isSaving = false
     }
 }
