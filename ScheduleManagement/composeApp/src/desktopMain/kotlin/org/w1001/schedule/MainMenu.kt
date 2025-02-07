@@ -176,6 +176,8 @@ fun ScheduleSetupUI(
             Button(onClick = {
                 if (isColumnValid) {
                     viewModel.inMainMenu.value = false
+                    recomputeCellsListSize(viewModel)
+                    viewModel.clearLoadedDocument()
                 } else {
                     showError = true
                 }

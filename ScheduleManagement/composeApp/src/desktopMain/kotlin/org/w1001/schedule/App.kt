@@ -95,28 +95,11 @@ fun App(
                 onSave = {
                     scope.launch {
                         try {
-                            currentDocumentId = repository.saveSpreadsheet(
-                                type = "schedule",
-                                workTime = viewModel.workTime.value,
-                                cells = viewModel.cells,
-                                name = "Януари 2026",
-                                databaseName = "Pavlikeni",
-                                collectionName = "schedule",
-                            )
+                            viewModel.saveDocument()
                         } catch (e: Exception) {
                             errorMessage = e.message ?: "An unknown error occurred"
                         }
                     }
-                },
-                onLoad = { id ->
-//                    scope.launch {
-//                        repository.loadSpreadsheet(id)?.let { doc ->
-//                            cells.clear()
-//                            cells.addAll(doc.cells.map { row ->
-//                                row.map { CellData(mutableStateOf(it)) }
-//                            })
-//                        }
-//                    }
                 },
                 modifier = Modifier.weight(0.3f)
             )
@@ -145,7 +128,8 @@ private fun ScheduleRow(
 
         for (group in 0 until columns) {
             val groupCells = (0 until groupSize).map { idx -> cells[rowIndex][group * groupSize + idx] }
-            val specialValue = groupCells.firstOrNull { viewModel.specialMergeSet.contains(it.content.value) }?.content?.value
+            val specialValue =
+                groupCells.firstOrNull { viewModel.specialMergeSet.contains(it.content.value) }?.content?.value
 
             if (specialValue != null) {
                 val size = if (workTime == 1) {

@@ -51,6 +51,36 @@ class SpreadsheetRepository {
 
     }
 
+    suspend fun updateSpreadsheet(
+        id: ObjectId,
+        type: String,
+        workTime: Int,
+        cells: List<List<CellData>>,
+        name: String,
+        databaseName: String,
+        collectionName: String
+    ) {
+        val database: MongoDatabase = client.getDatabase(databaseName)
+        val collection = database.getCollection<SpreadsheetDocument>(collectionName)
+
+        val flattenedCells = cells.map { row ->
+            row.map { it.content.value }
+        }
+
+        val updatedDocument = SpreadsheetDocument(
+            id = id,
+            type = type,
+            workTime = workTime,
+            cells = flattenedCells,
+            name = name
+        )
+
+        collection.replaceOne(
+            filter = org.bson.Document("_id", id),
+            replacement = updatedDocument
+        )
+    }
+
     suspend fun loadDocuments(databaseName: String, collectionName: String): List<SpreadsheetDocument> {
         val database: MongoDatabase = client.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)

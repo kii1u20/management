@@ -10,12 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import org.bson.types.ObjectId
 
 @Composable
 fun InfoPane(
     modifier: Modifier = Modifier, cellSize: MutableState<DpSize>, onSave: () -> Unit,
-    onLoad: (ObjectId) -> Unit,
     viewModel: AppViewModel
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
