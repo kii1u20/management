@@ -3,6 +3,7 @@ package org.w1001.schedule
 import com.mongodb.MongoWriteException
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 
@@ -85,5 +86,31 @@ class SpreadsheetRepository {
         val database: MongoDatabase = client.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)
         return collection.find().toList()
+    }
+
+    suspend fun loadDocumentMetadata(
+        databaseName: String,
+        collectionName: String,
+        type: String
+    ): List<DocumentMetadata> {
+        val database: MongoDatabase = client.getDatabase(databaseName)
+        val collection = database.getCollection<DocumentMetadata>(collectionName)
+
+        return collection.find(org.bson.Document("type", type))
+            .projection(org.bson.Document(mapOf(
+                "_id" to 1,
+                "name" to 1
+            )))
+            .toList()
+    }
+
+    suspend fun loadDocument(
+        id: ObjectId,
+        databaseName: String = "Pavlikeni",
+        collectionName: String = "schedule"
+    ): SpreadsheetDocument? {
+        val database: MongoDatabase = client.getDatabase(databaseName)
+        val collection = database.getCollection<SpreadsheetDocument>(collectionName)
+        return collection.find(org.bson.Document("_id", id)).firstOrNull()
     }
 }

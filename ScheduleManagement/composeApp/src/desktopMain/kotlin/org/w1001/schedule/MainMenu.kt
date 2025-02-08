@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainMenu(
@@ -54,14 +55,15 @@ fun LoadDocumentsDialog(
     onDismiss: () -> Unit,
     onDocumentSelected: (SpreadsheetDocument) -> Unit
 ) {
-    var documents by remember { mutableStateOf<List<SpreadsheetDocument>>(emptyList()) }
+    var documents by remember { mutableStateOf<List<DocumentMetadata>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         try {
             isLoading = true
-            documents = repository.loadDocuments("Pavlikeni", "schedule")
+            documents = repository.loadDocumentMetadata("Pavlikeni", "schedule", "schedule")
         } catch (e: Exception) {
             error = e.message
         } finally {
@@ -89,8 +91,13 @@ fun LoadDocumentsDialog(
                     items(documents) { doc ->
                         TextButton(
                             onClick = {
-                                onDocumentSelected(doc)
-                                onDismiss()
+                                scope.launch {
+                                    val fullDoc = repository.loadDocument(doc.id)
+                                    fullDoc?.let {
+                                        onDocumentSelected(it)
+                                        onDismiss()
+                                    }
+                                }
                             }
                         ) {
                             Text(doc.name)
