@@ -92,11 +92,13 @@ fun LoadDocumentsDialog(
                         TextButton(
                             onClick = {
                                 scope.launch {
+//                                    isLoading = true //show the loading dialog when the document is being loaded
                                     val fullDoc = repository.loadDocument(doc.id)
                                     fullDoc?.let {
                                         onDocumentSelected(it)
                                         onDismiss()
                                     }
+//                                    isLoading = false
                                 }
                             }
                         ) {

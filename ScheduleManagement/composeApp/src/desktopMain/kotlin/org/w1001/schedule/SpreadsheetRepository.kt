@@ -8,8 +8,12 @@ import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 
 class SpreadsheetRepository {
+    //MongoDB Atlas backend connection string
+//    private val connectionString =
+//        "mongodb+srv://ivanovikristian01:hBL5k2xzhg943z3s@cluster0.ckezs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    //Azure CosmosDB for MongoDB backend connection string
     private val connectionString =
-        "mongodb+srv://ivanovikristian01:hBL5k2xzhg943z3s@cluster0.ckezs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+        "mongodb://managementapp:KdfhqDIK0oLdoYZ7vJby9QC7l0cqFRdGRPXENb3ofz89BeMCPrgqqVZrJ8kdcJCQASGaFbiuRfwRACDbMQDmkw==@managementapp.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@managementapp@"
     private val client = MongoClient.create(connectionString)
 
 //    private suspend fun ensureUniqueNameIndex(databaseName: String, collectionName: String) {
