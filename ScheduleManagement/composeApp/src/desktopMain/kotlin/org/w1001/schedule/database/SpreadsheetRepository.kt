@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.database
 
 import com.mongodb.MongoWriteException
 import com.mongodb.kotlin.client.coroutine.MongoClient
@@ -6,6 +6,7 @@ import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
+import org.w1001.schedule.CellData
 
 class SpreadsheetRepository {
     //MongoDB Atlas backend connection string

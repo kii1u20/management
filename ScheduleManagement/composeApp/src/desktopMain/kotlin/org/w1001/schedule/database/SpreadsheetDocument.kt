@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.database
 
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.codecs.pojo.annotations.BsonProperty

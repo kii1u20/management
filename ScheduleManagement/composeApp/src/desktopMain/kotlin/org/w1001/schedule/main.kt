@@ -13,6 +13,9 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
+import org.w1001.schedule.components.WarningDialog
+import org.w1001.schedule.mainViews.App
+import org.w1001.schedule.mainViews.MainMenu
 
 val viewModel = AppViewModel()
 fun main() = application {

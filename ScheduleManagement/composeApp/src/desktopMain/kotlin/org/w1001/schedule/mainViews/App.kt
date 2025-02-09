@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.mainViews
 
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
@@ -15,9 +15,12 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
+import org.w1001.schedule.*
 import org.w1001.schedule.cells.calcCell
 import org.w1001.schedule.cells.mergedCell
 import org.w1001.schedule.cells.spreadsheetCell
+import org.w1001.schedule.components.*
+import org.w1001.schedule.database.SpreadsheetRepository
 
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
 

@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.mainViews
 
 //import androidx.compose.material.*
 import androidx.compose.foundation.layout.*
@@ -10,6 +10,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.w1001.schedule.AppViewModel
+import org.w1001.schedule.CellData
+import org.w1001.schedule.database.DocumentMetadata
+import org.w1001.schedule.database.SpreadsheetDocument
+import org.w1001.schedule.database.SpreadsheetRepository
 
 @Composable
 fun MainMenu(

@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.components
 
 /*
  *  Copyright 2022 Google Inc.
@@ -30,7 +30,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
 import kotlin.math.min
 import kotlinx.coroutines.delay
 

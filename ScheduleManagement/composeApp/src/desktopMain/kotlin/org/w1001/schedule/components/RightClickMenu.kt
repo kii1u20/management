@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.components
 
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem
@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.LocalTextContextMenu
 import androidx.compose.foundation.text.TextContextMenu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import org.w1001.schedule.CellData
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

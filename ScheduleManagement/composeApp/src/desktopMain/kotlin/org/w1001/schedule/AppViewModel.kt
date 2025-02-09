@@ -2,6 +2,8 @@ package org.w1001.schedule
 
 import androidx.compose.runtime.*
 import org.bson.types.ObjectId
+import org.w1001.schedule.database.SpreadsheetDocument
+import org.w1001.schedule.database.SpreadsheetRepository
 
 data class CellData(var content: MutableState<String>)
 

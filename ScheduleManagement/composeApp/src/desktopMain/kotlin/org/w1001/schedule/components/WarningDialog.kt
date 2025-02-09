@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.components
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button

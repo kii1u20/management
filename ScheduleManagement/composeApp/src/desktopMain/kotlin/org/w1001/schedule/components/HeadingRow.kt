@@ -1,4 +1,4 @@
-package org.w1001.schedule
+package org.w1001.schedule.components
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.w1001.schedule.AppViewModel
+import org.w1001.schedule.mainViews.cellSize
 
 @Composable
 fun HeadingRow(
