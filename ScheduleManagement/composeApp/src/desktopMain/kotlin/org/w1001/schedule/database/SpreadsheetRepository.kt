@@ -10,11 +10,11 @@ import org.w1001.schedule.CellData
 
 class SpreadsheetRepository {
     //MongoDB Atlas backend connection string
-//    private val connectionString =
-//        "mongodb+srv://ivanovikristian01:hBL5k2xzhg943z3s@cluster0.ckezs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    //Azure CosmosDB for MongoDB backend connection string
     private val connectionString =
-        "mongodb://managementapp:KdfhqDIK0oLdoYZ7vJby9QC7l0cqFRdGRPXENb3ofz89BeMCPrgqqVZrJ8kdcJCQASGaFbiuRfwRACDbMQDmkw==@managementapp.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@managementapp@"
+        "mongodb+srv://ivanovikristian01:hBL5k2xzhg943z3s@cluster0.ckezs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    //Azure CosmosDB for MongoDB backend connection string
+//    private val connectionString =
+//        "mongodb://managementapp:KdfhqDIK0oLdoYZ7vJby9QC7l0cqFRdGRPXENb3ofz89BeMCPrgqqVZrJ8kdcJCQASGaFbiuRfwRACDbMQDmkw==@managementapp.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@managementapp@"
     private val client = MongoClient.create(connectionString)
 
 //    private suspend fun ensureUniqueNameIndex(databaseName: String, collectionName: String) {
@@ -117,5 +117,23 @@ class SpreadsheetRepository {
         val database: MongoDatabase = client.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)
         return collection.find(org.bson.Document("_id", id)).firstOrNull()
+    }
+
+    suspend fun getDatabases(): List<String> {
+        return client.listDatabaseNames()
+            .toList()
+            .filter { it != "admin" && it != "local" }
+    }
+//
+//    suspend fun getUniqueDocumentTypes(databaseName: String, collectionName: String): List<String> {
+//        val database: MongoDatabase = client.getDatabase(databaseName)
+//        val collection = database.getCollection<SpreadsheetDocument>(collectionName)
+//
+//        return collection.distinct<String>("type").toList()
+//    }
+
+    suspend fun getCollectionNames(databaseName: String): List<String> {
+        val database: MongoDatabase = client.getDatabase(databaseName)
+        return database.listCollectionNames().toList()
     }
 }

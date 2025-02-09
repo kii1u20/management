@@ -1,5 +1,6 @@
 package org.w1001.schedule
 
+import MainMenuV2
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
@@ -15,7 +16,6 @@ import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
 import org.w1001.schedule.components.WarningDialog
 import org.w1001.schedule.mainViews.App
-import org.w1001.schedule.mainViews.MainMenu
 
 val viewModel = AppViewModel()
 fun main() = application {
@@ -71,7 +71,7 @@ fun main() = application {
         }
 
         if (viewModel.inMainMenu.value) {
-            MainMenu(viewModel)
+            MainMenuV2(viewModel)
         } else {
             App(viewModel)
         }
