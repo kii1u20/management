@@ -8,6 +8,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,8 +54,14 @@ fun CollectionView(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = onBack, modifier = Modifier.weight(0.2f)) {
-                Text("Назад")
+            Button(onClick = onBack, modifier = Modifier.weight(0.1f)) {
+                Row(horizontalArrangement = Arrangement.Start, modifier = Modifier.weight(0.4f)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "",
+                    )
+                }
+                Text("Назад", modifier = Modifier.weight(0.6f), maxLines = 1)
             }
             Text(
                 text = place,
@@ -62,10 +71,22 @@ fun CollectionView(
             )
             Button(
                 onClick = { /* TODO */ },
-                modifier = Modifier.weight(0.2f)
+                modifier = Modifier.weight(0.1f)
             ) {
-                Text("Нов Документ")
-//                Icon(imageVector = Icons.AutoMirrored.Filled.NoteAdd, contentDescription = "")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(horizontalArrangement = Arrangement.Start, modifier = Modifier.weight(0.4f)) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.NoteAdd,
+                            contentDescription = "",
+                        )
+                    }
+
+                    Text("Създай", modifier = Modifier.weight(0.6f), maxLines = 1)
+                }
             }
         }
 
@@ -75,6 +96,7 @@ fun CollectionView(
                 text = "Error: $error",
                 color = MaterialTheme.colorScheme.error
             )
+
             collections.isEmpty() -> Text("No collections found")
             else -> LazyVerticalGrid(
                 columns = GridCells.Fixed(3),

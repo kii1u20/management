@@ -88,7 +88,7 @@ fun OpenedCollectionView(
                     DocumentCard(document = document.name) {
                         scope.launch {
                             isLoading = true //show the loading dialog when the document is being loaded
-                            val fullDoc = repository.loadDocument(document.id)
+                            val fullDoc = repository.loadDocument(document.id, place, collection)
                             if (fullDoc != null) {
                                 viewModel.loadDocument(fullDoc)
                             }

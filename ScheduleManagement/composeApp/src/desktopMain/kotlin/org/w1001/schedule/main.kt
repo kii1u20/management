@@ -26,7 +26,7 @@ fun main() = application {
     Window(
         onCloseRequest = { if (!viewModel.inMainMenu.value) showExitDialog = true else exitApplication() },
         title = "ScheduleManagement",
-        state = WindowState(size = DpSize(800.dp, 900.dp), placement = WindowPlacement.Floating),
+        state = WindowState(size = DpSize(1200.dp, 900.dp), placement = WindowPlacement.Floating),
     ) {
         if (showExitDialog) {
             AlertDialog(

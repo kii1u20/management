@@ -111,8 +111,8 @@ class SpreadsheetRepository {
 
     suspend fun loadDocument(
         id: ObjectId,
-        databaseName: String = "Pavlikeni",
-        collectionName: String = "schedule"
+        databaseName: String,
+        collectionName: String
     ): SpreadsheetDocument? {
         val database: MongoDatabase = client.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)
