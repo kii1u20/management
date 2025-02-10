@@ -8,31 +8,35 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.w1001.schedule.database.DocumentMetadata
 import org.w1001.schedule.database.SpreadsheetRepository
+import org.w1001.schedule.viewModel
 
 @Composable
-fun PlacesView(
+fun OpenedCollectionView(
+    place: String,
+    collection: String,
     repository: SpreadsheetRepository,
-    onPlaceSelected: (String) -> Unit
+    onBack: () -> Unit
 ) {
-    var places by remember { mutableStateOf<List<String>>(emptyList()) }
+    var documents by remember { mutableStateOf<List<DocumentMetadata>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(place) {
         try {
-            places = repository.getDatabases()
+            documents = repository.loadDocumentMetadata(place, collection, collection)
             isLoading = false
         } catch (e: Exception) {
             error = e.message
@@ -46,11 +50,26 @@ fun PlacesView(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Please choose a place",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = onBack) {
+                Text("Назад")
+            }
+            Text(
+                text = collection,
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Button(
+                onClick = { },
+                enabled = false,
+                modifier = Modifier.alpha(0f)
+            ) {
+                Text("Назад")
+            }
+        }
 
         when {
             isLoading -> CircularProgressIndicator()
@@ -58,16 +77,23 @@ fun PlacesView(
                 text = "Error: $error",
                 color = MaterialTheme.colorScheme.error
             )
-            places.isEmpty() -> Text("No places found")
+            documents.isEmpty() -> Text("No collections found")
             else -> LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(50.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
             ) {
-                items(places) { place ->
-                    PlaceCard(place = place) {
-                        onPlaceSelected(place)
+                items(documents) { document ->
+                    DocumentCard(document = document.name) {
+                        scope.launch {
+                            isLoading = true //show the loading dialog when the document is being loaded
+                            val fullDoc = repository.loadDocument(document.id)
+                            if (fullDoc != null) {
+                                viewModel.loadDocument(fullDoc)
+                            }
+                            isLoading = false
+                        }
                     }
                 }
             }
@@ -76,8 +102,8 @@ fun PlacesView(
 }
 
 @Composable
-fun PlaceCard(
-    place: String,
+private fun DocumentCard(
+    document: String,
     onClick: () -> Unit
 ) {
     val scale = remember { Animatable(0f) }
@@ -101,18 +127,18 @@ fun PlaceCard(
             .padding(16.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .aspectRatio(2.5f)
+            .aspectRatio(2.5f),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = place,
+                text = document,
                 style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Center
             )
         }
     }

@@ -17,7 +17,8 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material)
             implementation(compose.material3)
-//            implementation("androidx.compose.material3:material3:1.4.0-alpha04")
+//            implementation ("androidx.compose.material:material-icons-extended:1.7.6")
+
             implementation("dev.chrisbanes.haze:haze:1.3.0")
             implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.0")
             implementation("org.mongodb:bson-kotlinx:5.3.0")
