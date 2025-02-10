@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.w1001.schedule.components.mainMenu.MainMenuGrid
+import org.w1001.schedule.components.mainMenu.MainMenuTopBar
 import org.w1001.schedule.database.SpreadsheetRepository
 
 @Composable
@@ -35,32 +36,16 @@ fun PlacesView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 48.dp, vertical = 32.dp),  // increased horizontal padding
+            .padding(16.dp),  // increased horizontal padding
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primaryContainer,
-            shape = RoundedCornerShape(12.dp),
-            tonalElevation = 2.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Welcome to Schedule Management",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = "Please select a location to continue",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-        }
+        MainMenuTopBar(
+            onBack = {},
+            onCreate = {},
+            heading = "Моля, изберете обект",
+            createButtonVisible = false,
+            backButtonVisible = false
+        )
 
         when {
             isLoading -> {
