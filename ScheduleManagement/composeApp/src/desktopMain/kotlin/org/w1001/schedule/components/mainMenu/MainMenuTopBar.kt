@@ -10,12 +10,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 
 @Composable
-fun MainMenuTopBar(onBack: () -> Unit, onCreate: () -> Unit, heading: String, backButtonVisible: Boolean = true, createButtonVisible: Boolean = true) {
+fun MainMenuTopBar(
+    onBack: () -> Unit,
+    onCreate: () -> Unit,
+    heading: String,
+    backButtonVisible: Boolean = true,
+    createButtonVisible: Boolean = true
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -24,7 +32,21 @@ fun MainMenuTopBar(onBack: () -> Unit, onCreate: () -> Unit, heading: String, ba
         BoxWithConstraints(modifier = Modifier.weight(0.1f)) {
             val buttonFontSize = with(LocalDensity.current) { (maxWidth / 10).toSp() }
 
-            Button(onClick = onBack, enabled = backButtonVisible, modifier = Modifier.alpha(if (backButtonVisible) 1f else 0f)) {
+            Button(
+                onClick = onBack,
+                enabled = backButtonVisible,
+                modifier = Modifier
+                    .alpha(if (backButtonVisible) 1f else 0f)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = ButtonDefaults.shape,
+                        spotColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    )
+                    .zIndex(1f),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp, pressedElevation = 0.dp, hoveredElevation = 0.dp
+                )
+            ) {
                 Row(horizontalArrangement = Arrangement.Start, modifier = Modifier.weight(0.4f)) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -32,10 +54,7 @@ fun MainMenuTopBar(onBack: () -> Unit, onCreate: () -> Unit, heading: String, ba
                     )
                 }
                 Text(
-                    "Назад",
-                    modifier = Modifier.weight(0.6f),
-                    maxLines = 1,
-                    fontSize = buttonFontSize
+                    "Назад", modifier = Modifier.weight(0.6f), maxLines = 1, fontSize = buttonFontSize
                 )
             }
         }
@@ -44,7 +63,14 @@ fun MainMenuTopBar(onBack: () -> Unit, onCreate: () -> Unit, heading: String, ba
             val headingFontSize = with(LocalDensity.current) { (maxWidth / 20).toSp() }
 
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 6.dp,
+                        shape = RoundedCornerShape(12.dp),
+                        spotColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    )
+                    .zIndex(1f),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shape = RoundedCornerShape(12.dp),
                 tonalElevation = 2.dp
@@ -64,7 +90,21 @@ fun MainMenuTopBar(onBack: () -> Unit, onCreate: () -> Unit, heading: String, ba
         BoxWithConstraints(modifier = Modifier.weight(0.1f)) {
             val buttonFontSize = with(LocalDensity.current) { (maxWidth / 10).toSp() }
 
-            Button(onClick = onCreate, enabled = createButtonVisible, modifier = Modifier.alpha(if (createButtonVisible) 1f else 0f)) {
+            Button(
+                onClick = onCreate,
+                enabled = createButtonVisible,
+                modifier = Modifier
+                    .alpha(if (createButtonVisible) 1f else 0f)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = ButtonDefaults.shape,
+                        spotColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    )
+                    .zIndex(1f),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp, pressedElevation = 0.dp, hoveredElevation = 0.dp
+                )
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Start,
@@ -77,10 +117,7 @@ fun MainMenuTopBar(onBack: () -> Unit, onCreate: () -> Unit, heading: String, ba
                         )
                     }
                     Text(
-                        "Създай",
-                        modifier = Modifier.weight(0.6f),
-                        maxLines = 1,
-                        fontSize = buttonFontSize
+                        "Създай", modifier = Modifier.weight(0.6f), maxLines = 1, fontSize = buttonFontSize
                     )
                 }
             }

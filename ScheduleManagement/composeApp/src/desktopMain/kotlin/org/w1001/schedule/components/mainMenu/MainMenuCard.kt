@@ -47,9 +47,17 @@ fun MainMenuCard(
                 scaleY = scale.value
             }
             .clip(RoundedCornerShape(8.dp))
+            .padding(20.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 200.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 8.dp,
+            pressedElevation = 10.dp,
+            hoveredElevation = 14.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        )
     ) {
         BoxWithConstraints(
             modifier = Modifier
