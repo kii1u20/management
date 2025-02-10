@@ -3,10 +3,11 @@ package org.w1001.schedule
 import MainMenuV2
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -70,10 +71,39 @@ fun main() = application {
             )
         }
 
-        if (viewModel.inMainMenu.value) {
-            MainMenuV2(viewModel)
-        } else {
-            App(viewModel)
+        MaterialTheme(
+            colorScheme = lightColorScheme(
+                primary = Color(0xFF825500),
+                onPrimary = Color(0xFFFFFFFF),
+                primaryContainer = Color(0xFFFFDDB3),
+                onPrimaryContainer = Color(0xFF291800),
+                secondary = Color(0xFF715B00),
+                onSecondary = Color(0xFFFFFFFF),
+                secondaryContainer = Color(0xFFFFE08B),
+                onSecondaryContainer = Color(0xFF231B00),
+                tertiary = Color(0xFF984061),
+                onTertiary = Color(0xFFFFFFFF),
+                tertiaryContainer = Color(0xFFFFD9E2),
+                onTertiaryContainer = Color(0xFF3E001D),
+                background = Color(0xFFFFFBFF),
+                onBackground = Color(0xFF1F1B16),
+                surface = Color(0xFFFFF8F5),
+                onSurface = Color(0xFF1F1B16),
+                surfaceVariant = Color(0xFFEFE0CF),
+                onSurfaceVariant = Color(0xFF4F4539),
+                outline = Color(0xFF817567)
+            )
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                if (viewModel.inMainMenu.value) {
+                    MainMenuV2(viewModel)
+                } else {
+                    App(viewModel)
+                }
+            }
         }
     }
 

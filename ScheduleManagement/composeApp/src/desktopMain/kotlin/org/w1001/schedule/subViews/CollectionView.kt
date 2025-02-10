@@ -1,19 +1,18 @@
 package org.w1001.schedule.subViews
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.NoteAdd
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.w1001.schedule.components.MainMenuCard
+import org.w1001.schedule.components.mainMenu.MainMenuGrid
+import org.w1001.schedule.components.mainMenu.MainMenuTopBar
 import org.w1001.schedule.database.SpreadsheetRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,46 +43,7 @@ fun CollectionView(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(onClick = onBack, modifier = Modifier.weight(0.1f)) {
-                Row(horizontalArrangement = Arrangement.Start, modifier = Modifier.weight(0.4f)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "",
-                    )
-                }
-                Text("Назад", modifier = Modifier.weight(0.6f), maxLines = 1)
-            }
-            Text(
-                text = place,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.weight(0.6f),
-            )
-            Button(
-                onClick = { /* TODO */ },
-                modifier = Modifier.weight(0.1f)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(horizontalArrangement = Arrangement.Start, modifier = Modifier.weight(0.4f)) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NoteAdd,
-                            contentDescription = "",
-                        )
-                    }
-
-                    Text("Създай", modifier = Modifier.weight(0.6f), maxLines = 1)
-                }
-            }
-        }
+        MainMenuTopBar(onBack, {} , place)
 
         when {
             isLoading -> CircularProgressIndicator()
@@ -93,18 +53,7 @@ fun CollectionView(
             )
 
             collections.isEmpty() -> Text("No collections found")
-            else -> LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-            ) {
-                items(collections) { collection ->
-                    MainMenuCard(text = collection) {
-                        onCollectionSelected(collection)
-                    }
-                }
-            }
+            else -> MainMenuGrid(collections, onCollectionSelected)
         }
     }
 }
