@@ -134,6 +134,24 @@ class SpreadsheetRepository {
 
     suspend fun getCollectionNames(databaseName: String): List<String> {
         val database: MongoDatabase = client.getDatabase(databaseName)
-        return database.listCollectionNames().toList()
+        return database.listCollectionNames().toList().sorted()
+    }
+
+    suspend fun createCollection(databaseName: String, collectionName: String): Boolean {
+        val database: MongoDatabase = client.getDatabase(databaseName)
+        return try {
+            // Check if collection already exists
+            val collections = database.listCollectionNames().toList()
+            if (collections.contains(collectionName)) {
+                return false
+            }
+
+            database.createCollection(collectionName)
+            true
+        } catch (e: Exception) {
+            // Log the error if needed
+            println("Failed to create collection: ${e.message}")
+            false
+        }
     }
 }

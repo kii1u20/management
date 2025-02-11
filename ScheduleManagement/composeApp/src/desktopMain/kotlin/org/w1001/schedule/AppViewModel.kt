@@ -9,6 +9,7 @@ data class CellData(var content: MutableState<String>)
 
 class AppViewModel {
     var isSaving by mutableStateOf(false)
+    var documentTypes = mutableStateListOf("schedule")
 
     // From main.kt
     val inMainMenu = mutableStateOf(true)

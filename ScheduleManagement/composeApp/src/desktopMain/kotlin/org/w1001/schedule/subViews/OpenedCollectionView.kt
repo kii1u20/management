@@ -1,8 +1,6 @@
 package org.w1001.schedule.subViews
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,11 +46,20 @@ fun OpenedCollectionView(
         MainMenuTopBar(
             onBack = onBack,
             onCreate = {},
-            heading = collection
+            heading = "$place - $collection"
         )
 
         when {
-            isLoading -> CircularProgressIndicator()
+            isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
             error != null -> Text(
                 text = "Error: $error",
                 color = MaterialTheme.colorScheme.error
