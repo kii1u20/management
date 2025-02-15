@@ -1,5 +1,6 @@
 package org.w1001.schedule.components.mainMenu
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -42,11 +43,23 @@ fun MainMenuGrid(objects: List<String>, onObjectSelected: (String) -> Unit) {
                 .fillMaxSize()
                 .padding(top = 48.dp, bottom = 48.dp)
         ) {
-            items(objects) { obj ->
+            items(
+                items = objects,
+                key = { it }
+            ) { obj ->
                 MainMenuCard(
                     text = obj,
                     onClick = { onObjectSelected(obj) },
-                    modifier = Modifier.size(width = 200.dp, height = 200.dp)
+                    modifier = Modifier
+                        .size(width = 200.dp, height = 200.dp)
+                        .animateItem(
+                            fadeInSpec = null,
+                            fadeOutSpec = null,
+                            placementSpec = spring(
+                                dampingRatio = 0.8f,
+                                stiffness = 300f
+                            )
+                        )
                 )
             }
         }
