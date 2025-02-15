@@ -1,14 +1,14 @@
 package org.w1001.schedule.subViews
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.w1001.schedule.components.mainMenu.CreateDocumentDialog
+import org.w1001.schedule.components.mainMenu.CustomSnackbar
 import org.w1001.schedule.components.mainMenu.MainMenuGrid
 import org.w1001.schedule.components.mainMenu.MainMenuTopBar
 import org.w1001.schedule.database.DocumentMetadata
@@ -25,11 +25,15 @@ fun OpenedCollectionView(
     var documents by remember { mutableStateOf<List<DocumentMetadata>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
+    var showCreateDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    var isSuccess by remember { mutableStateOf(true) }
 
     LaunchedEffect(place) {
         try {
-            documents = repository.loadDocumentMetadata(place, collection, collection)
+            documents = repository.loadDocumentMetadata(place, collection)
             isLoading = false
         } catch (e: Exception) {
             error = e.message
@@ -37,47 +41,99 @@ fun OpenedCollectionView(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        MainMenuTopBar(
-            onBack = onBack,
-            onCreate = {},
-            heading = "$place - $collection"
-        )
+    if (showCreateDialog) {
+        CreateDocumentDialog(
+            onDismiss = { showCreateDialog = false },
+            onConfirm = { name, type, columns, columnNames ->
+                coroutineScope.launch {
+//                    val success = repository.createCollection(place, name)
+                    showCreateDialog = false
+                    isSuccess = true
 
-        when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp)
-                    )
+                    val message = if (isSuccess) {
+                        viewModel.createNewSchedule(
+                            columns = columns,
+                            columnNames = columnNames.map { mutableStateOf(it) }.toMutableStateList(),
+                            name = name,
+                            isSchedule1 = type == "schedule1"
+                        )
+                        viewModel.currentDatabase = place
+                        viewModel.currentCollection = collection
+                        "Document created successfully"
+                    } else {
+                        "A document with this name already exists"
+                    }
+
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = message,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+
+//                    if (isSuccess) {
+//                        documents = repository.loadDocumentMetadata(place, collection, collection)
+//                    }
                 }
-            }
-            error != null -> Text(
-                text = "Error: $error",
-                color = MaterialTheme.colorScheme.error
+            },
+            documentTypes = viewModel.documentTypes
+        )
+    }
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState, snackbar = { snackbarData ->
+                CustomSnackbar(snackbarData, isSuccess = isSuccess)
+            })
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            MainMenuTopBar(
+                onBack = onBack,
+                onCreate = { showCreateDialog = true },
+                heading = "$place - $collection"
             )
-            documents.isEmpty() -> Text("No collections found")
-            else -> MainMenuGrid(documents.map { it.name }, onObjectSelected = { name ->
-                val document = documents.find { it.name == name }
-                if (document != null) {
-                    scope.launch {
-                        isLoading = true // show the loading dialog when the document is being loaded
-                        val fullDoc = repository.loadDocument(document.id, place, collection)
-                        if (fullDoc != null) {
-                            viewModel.loadDocument(fullDoc)
-                        }
-                        isLoading = false
+
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp)
+                        )
                     }
                 }
-            })
+
+                error != null -> Text(
+                    text = "Error: $error",
+                    color = MaterialTheme.colorScheme.error
+                )
+
+                documents.isEmpty() -> Text("No collections found")
+                else -> MainMenuGrid(documents.map { it.name }, onObjectSelected = { name ->
+                    val document = documents.find { it.name == name }
+                    if (document != null) {
+                        coroutineScope.launch {
+                            isLoading = true // show the loading dialog when the document is being loaded
+                            val fullDoc = repository.loadDocument(document.id, place, collection)
+                            if (fullDoc != null) {
+                                viewModel.loadDocument(fullDoc)
+                                viewModel.currentDatabase = place
+                                viewModel.currentCollection = collection
+                            }
+                            isLoading = false
+                        }
+                    }
+                })
+            }
         }
     }
 }

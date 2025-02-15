@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.w1001.schedule.AppViewModel
+import org.w1001.schedule.DocumentState
 import org.w1001.schedule.mainViews.cellSize
 
 @Composable
@@ -25,7 +25,7 @@ fun HeadingRow(
     columns: Int,
     horizontalScrollState: ScrollState,
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
-    viewModel: AppViewModel
+    docState: DocumentState.ScheduleState
 ) {
     if (workTime == 1) {
         Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
@@ -37,7 +37,7 @@ fun HeadingRow(
                 workTime,
                 3,
                 calcCellBindings,
-                viewModel
+                docState
             )
         }
         Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
@@ -51,7 +51,7 @@ fun HeadingRow(
                 workTime,
                 5,
                 calcCellBindings,
-                viewModel
+                docState
             )
         }
         Spacer(modifier = Modifier.height(5.dp).fillMaxWidth())
@@ -84,7 +84,7 @@ private fun ColumnBox(
     workTime: Int,
     fontSizeMultiplier: Int,
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
-    viewModel: AppViewModel
+    docState: DocumentState.ScheduleState
 ) {
     val width = if (workTime == 1) cellSize.value.width * 3 else cellSize.value.width * 5 + 5.dp
     val height = cellSize.value.height
@@ -105,7 +105,7 @@ private fun ColumnBox(
                     val calculatedWidth = if (workTime == 1) cellSize.value.width * 2 else cellSize.value.width * 4 + 5.dp
                     Box(modifier = Modifier.size(calculatedWidth, height)) {
                         Text(
-                            viewModel.columnNames[j].value + ":",
+                            (if (j < docState.columnNames.size) docState.columnNames[j].value else "Колона $j") + ":",
                             modifier = Modifier.align(Alignment.Center),
                             style = MaterialTheme.typography.body1.copy(
                                 color = Color.Black,

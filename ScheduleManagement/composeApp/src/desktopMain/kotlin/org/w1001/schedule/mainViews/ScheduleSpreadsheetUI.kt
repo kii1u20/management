@@ -25,7 +25,7 @@ import org.w1001.schedule.database.SpreadsheetRepository
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
 
 @Composable
-fun App(
+fun ScheduleSpreadsheetUI(
     viewModel: AppViewModel
 ) {
     var selectedCell by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -37,6 +37,8 @@ fun App(
     val repository = remember { SpreadsheetRepository() }
     var currentDocumentId by remember { mutableStateOf<ObjectId?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val docState = viewModel.documentState.value as DocumentState.ScheduleState
 
     MaterialTheme {
         if (viewModel.isSaving) {
@@ -58,11 +60,11 @@ fun App(
         }) {
             Column(Modifier.weight(0.7f)) {
                 HeadingRow(
-                    workTime = viewModel.workTime.value,
-                    columns = viewModel.numberOfColumns.value.toInt(),
+                    workTime = docState.workTime.value,
+                    columns = docState.numberOfColumns.value.toInt(),
                     horizontalScrollState = horizontalScrollState,
-                    calcCellBindings = viewModel.calcCellBindings,
-                    viewModel = viewModel
+                    calcCellBindings = docState.calcCellBindings,
+                    docState = docState
                 )
 
                 Row() {
@@ -70,7 +72,7 @@ fun App(
                         Modifier.verticalScroll(verticalScrollState), // Make the column scrollable
                         horizontalAlignment = Alignment.Start
                     ) {
-                        for (i in viewModel.cells.indices) {
+                        for (i in docState.cells.indices) {
                             createDayCell(i, selectedCell)
                         }
                     }
@@ -79,16 +81,16 @@ fun App(
                             .horizontalScroll(horizontalScrollState),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        for (i in viewModel.cells.indices) {
+                        for (i in docState.cells.indices) {
                             key(i) { // Add key to help with recomposition
                                 ScheduleRow(
                                     rowIndex = i,
-                                    cells = viewModel.cells,
-                                    columns = viewModel.numberOfColumns.value.toInt(),
-                                    workTime = viewModel.workTime.value,
+                                    cells = docState.cells,
+                                    columns = docState.numberOfColumns.value.toInt(),
+                                    workTime = docState.workTime.value,
                                     selectedCell = selectedCell,
                                     onCellSelected = { selectedCell = it },
-                                    calcCellBindings = viewModel.calcCellBindings,
+                                    calcCellBindings = docState.calcCellBindings,
                                     viewModel = viewModel
                                 )
                             }

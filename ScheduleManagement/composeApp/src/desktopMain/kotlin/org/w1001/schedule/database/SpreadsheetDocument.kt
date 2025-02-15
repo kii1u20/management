@@ -10,7 +10,7 @@ data class SpreadsheetDocument(
     @BsonProperty("name")
     val name: String,
     val type: String,
-    val workTime: Int,
+    val columnNames: List<String>,
     val cells: List<List<String>>,
     val createdAt: Long = System.currentTimeMillis()
 )

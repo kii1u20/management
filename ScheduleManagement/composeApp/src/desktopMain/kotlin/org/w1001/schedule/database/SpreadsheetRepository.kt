@@ -25,7 +25,7 @@ class SpreadsheetRepository {
 
     suspend fun saveSpreadsheet(
         type: String,
-        workTime: Int,
+        columnNames: List<String>,
         cells: List<List<CellData>>,
         name: String,
         databaseName: String,
@@ -41,7 +41,7 @@ class SpreadsheetRepository {
 
             val document = SpreadsheetDocument(
                 type = type,
-                workTime = workTime,
+                columnNames = columnNames,
                 cells = flattenedCells,
                 name = name
             )
@@ -60,7 +60,7 @@ class SpreadsheetRepository {
     suspend fun updateSpreadsheet(
         id: ObjectId,
         type: String,
-        workTime: Int,
+        columnNames: List<String>,
         cells: List<List<CellData>>,
         name: String,
         databaseName: String,
@@ -76,7 +76,7 @@ class SpreadsheetRepository {
         val updatedDocument = SpreadsheetDocument(
             id = id,
             type = type,
-            workTime = workTime,
+            columnNames = columnNames,
             cells = flattenedCells,
             name = name
         )
@@ -95,13 +95,12 @@ class SpreadsheetRepository {
 
     suspend fun loadDocumentMetadata(
         databaseName: String,
-        collectionName: String,
-        type: String
+        collectionName: String
     ): List<DocumentMetadata> {
         val database: MongoDatabase = client.getDatabase(databaseName)
         val collection = database.getCollection<DocumentMetadata>(collectionName)
 
-        return collection.find(org.bson.Document("type", type))
+        return collection.find()
             .projection(org.bson.Document(mapOf(
                 "_id" to 1,
                 "name" to 1

@@ -16,7 +16,6 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
 import org.w1001.schedule.components.WarningDialog
-import org.w1001.schedule.mainViews.App
 
 val viewModel = AppViewModel()
 fun main() = application {
@@ -101,7 +100,7 @@ fun main() = application {
                 if (viewModel.inMainMenu.value) {
                     MainMenuV2(viewModel)
                 } else {
-                    App(viewModel)
+                    DocumentUI(viewModel)
                 }
             }
         }

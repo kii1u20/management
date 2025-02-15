@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.w1001.schedule.components.mainMenu.CreateCollectionDialog
+import org.w1001.schedule.components.mainMenu.CustomSnackbar
 import org.w1001.schedule.components.mainMenu.MainMenuGrid
 import org.w1001.schedule.components.mainMenu.MainMenuTopBar
 import org.w1001.schedule.database.SpreadsheetRepository
@@ -106,27 +107,5 @@ fun CollectionView(
                 else -> MainMenuGrid(collections, onCollectionSelected)
             }
         }
-    }
-}
-
-@Composable
-fun CustomSnackbar(
-    snackbarData: SnackbarData,
-    isSuccess: Boolean
-) {
-    Snackbar(
-        modifier = Modifier.padding(16.dp),
-        containerColor = if (isSuccess) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.errorContainer
-        },
-        contentColor = if (isSuccess) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onErrorContainer
-        }
-    ) {
-        Text(snackbarData.visuals.message)
     }
 }
