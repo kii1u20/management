@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import org.w1001.schedule.components.mainMenu.MainMenuGrid
 import org.w1001.schedule.components.mainMenu.MainMenuTopBar
 import org.w1001.schedule.database.SpreadsheetRepository
+import org.w1001.schedule.viewModel
 
 @Composable
 fun PlacesView(
@@ -26,6 +27,8 @@ fun PlacesView(
     LaunchedEffect(Unit) {
         try {
             places = repository.getDatabases()
+            viewModel.currentDatabase = ""
+            viewModel.currentCollection = ""
             isLoading = false
         } catch (e: Exception) {
             error = e.message
@@ -79,7 +82,7 @@ fun PlacesView(
                 )
             }
             else -> {
-                MainMenuGrid(places, onPlaceSelected)
+                MainMenuGrid(places, onPlaceSelected, onDeleteObject = {}, showDeleteButton = false)
             }
         }
     }

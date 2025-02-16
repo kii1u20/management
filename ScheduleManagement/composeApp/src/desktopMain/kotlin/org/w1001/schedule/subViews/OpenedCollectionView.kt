@@ -31,9 +31,12 @@ fun OpenedCollectionView(
     val snackbarHostState = remember { SnackbarHostState() }
     var isSuccess by remember { mutableStateOf(true) }
 
+    var documentToDelete by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(place) {
         try {
             documents = repository.loadDocumentMetadata(place, collection)
+            viewModel.currentCollection = collection
             isLoading = false
         } catch (e: Exception) {
             error = e.message
@@ -77,6 +80,42 @@ fun OpenedCollectionView(
                 }
             },
             documentTypes = viewModel.documentTypes
+        )
+    }
+
+    if (documentToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { documentToDelete = null },
+            title = { Text("Delete document") },
+            text = { Text("Are you sure you want to delete \"${documentToDelete}\"?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val success = repository.deleteDocumentByName(place, collection, documentToDelete!!)
+                            isSuccess = success
+                            val message = if (success) {
+                                documents = repository.loadDocumentMetadata(place, collection)
+                                "Collection deleted successfully"
+                            } else {
+                                "Failed to delete collection"
+                            }
+                            documentToDelete = null
+                            snackbarHostState.showSnackbar(
+                                message = message,
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { documentToDelete = null }) {
+                    Text("No")
+                }
+            }
         )
     }
 
@@ -132,7 +171,9 @@ fun OpenedCollectionView(
                             isLoading = false
                         }
                     }
-                })
+                }, onDeleteObject = { document ->
+                    documentToDelete = document
+                }, showDeleteButton = true)
             }
         }
     }

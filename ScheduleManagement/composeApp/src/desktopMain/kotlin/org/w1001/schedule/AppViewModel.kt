@@ -27,7 +27,7 @@ class AppViewModel {
     var currentDatabase by mutableStateOf("")
     var currentCollection by mutableStateOf("")
 
-    private val repository = SpreadsheetRepository()
+    val repository = SpreadsheetRepository()
     val specialMergeSet = hashSetOf("A", "B", "C")
 
     fun createNewSchedule(

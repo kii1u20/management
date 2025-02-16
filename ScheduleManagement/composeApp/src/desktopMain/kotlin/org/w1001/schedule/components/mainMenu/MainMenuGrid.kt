@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 
 @Composable
-fun MainMenuGrid(objects: List<String>, onObjectSelected: (String) -> Unit) {
+fun MainMenuGrid(objects: List<String>, onObjectSelected: (String) -> Unit, onDeleteObject: (String) -> Unit, showDeleteButton: Boolean) {
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -59,7 +59,11 @@ fun MainMenuGrid(objects: List<String>, onObjectSelected: (String) -> Unit) {
                                 dampingRatio = 0.8f,
                                 stiffness = 300f
                             )
-                        )
+                        ),
+                    onDelete = {
+                        onDeleteObject(obj)
+                    },
+                    showDeleteButton = showDeleteButton
                 )
             }
         }

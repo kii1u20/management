@@ -31,9 +31,13 @@ fun CollectionView(
     val snackbarHostState = remember { SnackbarHostState() }
     var isSuccess by remember { mutableStateOf(true) }
 
+    var collectionToDelete by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(place) {
         try {
             collections = repository.getCollectionNames(place)
+            viewModel.currentDatabase = place
+            viewModel.currentCollection = ""
             isLoading = false
         } catch (e: Exception) {
             error = e.message
@@ -73,10 +77,49 @@ fun CollectionView(
         )
     }
 
+    // **New** AlertDialog when collectionToDelete is not null
+    if (collectionToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { collectionToDelete = null },
+            title = { Text("Delete collection") },
+            text = { Text("Are you sure you want to delete \"${collectionToDelete}\"?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val success = repository.deleteCollection(place, collectionToDelete!!)
+                            isSuccess = success
+                            val message = if (success) {
+                                collections = repository.getCollectionNames(place)
+                                "Collection deleted successfully"
+                            } else {
+                                "Failed to delete collection"
+                            }
+                            collectionToDelete = null
+                            snackbarHostState.showSnackbar(
+                                message = message,
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { collectionToDelete = null }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState, snackbar = { snackbarData ->
-            CustomSnackbar(snackbarData, isSuccess = isSuccess)
-        }) }
+        snackbarHost = {
+            SnackbarHost(snackbarHostState, snackbar = { snackbarData ->
+                CustomSnackbar(snackbarData, isSuccess = isSuccess)
+            })
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -85,7 +128,7 @@ fun CollectionView(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            MainMenuTopBar(onBack, {showCreateDialog = true} , place)
+            MainMenuTopBar(onBack, { showCreateDialog = true }, place)
 
             when {
                 isLoading -> {
@@ -98,13 +141,16 @@ fun CollectionView(
                         )
                     }
                 }
+
                 error != null -> Text(
                     text = "Error: $error",
                     color = MaterialTheme.colorScheme.error
                 )
 
                 collections.isEmpty() -> Text("No collections found")
-                else -> MainMenuGrid(collections, onCollectionSelected)
+                else -> MainMenuGrid(collections, onCollectionSelected, onDeleteObject = { collectionName ->
+                    collectionToDelete = collectionName
+                }, showDeleteButton = true)
             }
         }
     }

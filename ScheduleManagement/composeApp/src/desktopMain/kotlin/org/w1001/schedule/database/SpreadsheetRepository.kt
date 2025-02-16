@@ -153,4 +153,21 @@ class SpreadsheetRepository {
             false
         }
     }
+
+    suspend fun deleteDocumentByName(databaseName: String, collectionName: String, documentName: String): Boolean {
+        val database = client.getDatabase(databaseName)
+        val collection = database.getCollection<SpreadsheetDocument>(collectionName)
+        val result = collection.deleteOne(org.bson.Document("name", documentName))
+        return result.deletedCount > 0
+    }
+
+    suspend fun deleteCollection(databaseName: String, collectionName: String): Boolean {
+        val database = client.getDatabase(databaseName)
+        return try {
+            database.getCollection<SpreadsheetDocument>(collectionName).drop()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
