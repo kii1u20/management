@@ -34,6 +34,7 @@ fun MainMenuCard(
 ) {
     val scale = remember { Animatable(0f) }
     val isHovered = remember { mutableStateOf(false) }
+    val deleteButtonScale = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         scale.animateTo(
@@ -42,17 +43,18 @@ fun MainMenuCard(
         )
     }
 
+    LaunchedEffect(isHovered.value) {
+        deleteButtonScale.animateTo(
+            targetValue = if (isHovered.value) 1f else 0f,
+            animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f)
+        )
+    }
+
     Card(
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale.value
                 scaleY = scale.value
-            }
-            .onPointerEvent(PointerEventType.Enter) {
-                isHovered.value = true
-            }
-            .onPointerEvent(PointerEventType.Exit) {
-                isHovered.value = false
             }
             .clip(RoundedCornerShape(8.dp))
             .padding(20.dp)
@@ -68,6 +70,12 @@ fun MainMenuCard(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
+                .onPointerEvent(PointerEventType.Enter) {
+                    isHovered.value = true
+                }
+                .onPointerEvent(PointerEventType.Exit) {
+                    isHovered.value = false
+                }
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -79,9 +87,13 @@ fun MainMenuCard(
                 textAlign = TextAlign.Center
             )
 
-            if (showDeleteButton && isHovered.value) {
+            if (showDeleteButton) {
                 ElevatedButton(
-                    modifier = Modifier.align(Alignment.TopEnd),
+                    modifier = Modifier.align(Alignment.TopEnd).graphicsLayer {
+                        scaleX = deleteButtonScale.value
+                        scaleY = deleteButtonScale.value
+                        alpha = deleteButtonScale.value
+                    },
                     onClick = onDelete,
                     colors = ButtonDefaults.elevatedButtonColors(
                         containerColor = MaterialTheme.colorScheme.error,

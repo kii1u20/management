@@ -7,10 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import org.w1001.schedule.components.mainMenu.CreateCollectionDialog
-import org.w1001.schedule.components.mainMenu.CustomSnackbar
-import org.w1001.schedule.components.mainMenu.MainMenuGrid
-import org.w1001.schedule.components.mainMenu.MainMenuTopBar
+import org.w1001.schedule.components.mainMenu.*
 import org.w1001.schedule.database.SpreadsheetRepository
 import org.w1001.schedule.viewModel
 
@@ -48,7 +45,7 @@ fun CollectionView(
     if (showCreateDialog) {
         CreateCollectionDialog(
             onDismiss = { showCreateDialog = false },
-            onConfirm = { name, type ->
+            onConfirm = { name ->
                 coroutineScope.launch {
                     val success = repository.createCollection(place, name)
                     showCreateDialog = false
@@ -72,43 +69,30 @@ fun CollectionView(
                         collections = repository.getCollectionNames(place)
                     }
                 }
-            },
-            documentTypes = viewModel.documentTypes
+            }
         )
     }
 
     // **New** AlertDialog when collectionToDelete is not null
     if (collectionToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { collectionToDelete = null },
-            title = { Text("Delete collection") },
-            text = { Text("Are you sure you want to delete \"${collectionToDelete}\"?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            val success = repository.deleteCollection(place, collectionToDelete!!)
-                            isSuccess = success
-                            val message = if (success) {
-                                collections = repository.getCollectionNames(place)
-                                "Collection deleted successfully"
-                            } else {
-                                "Failed to delete collection"
-                            }
-                            collectionToDelete = null
-                            snackbarHostState.showSnackbar(
-                                message = message,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }
-                ) {
-                    Text("Yes")
-                }
+        DeleteObjectDialog(
+            objectName = collectionToDelete,
+            dialogTitle = "Delete collection",
+            dialogText = "Are you sure you want to delete \"${collectionToDelete}\"?",
+            onDismiss = { collectionToDelete = null },
+            onConfirmDelete = {
+                repository.deleteCollection(place, collectionToDelete!!)
             },
-            dismissButton = {
-                TextButton(onClick = { collectionToDelete = null }) {
-                    Text("No")
+            onDeleteFinished = { success, message ->
+                isSuccess = success
+                if (success) {
+                    collections = repository.getCollectionNames(place)
+                }
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        duration = SnackbarDuration.Short
+                    )
                 }
             }
         )

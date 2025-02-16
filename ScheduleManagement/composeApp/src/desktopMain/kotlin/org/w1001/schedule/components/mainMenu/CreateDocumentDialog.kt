@@ -3,18 +3,23 @@
 package org.w1001.schedule.components.mainMenu
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun CreateDocumentDialog(
     onDismiss: () -> Unit,
@@ -24,22 +29,68 @@ fun CreateDocumentDialog(
     var selectedType by remember { mutableStateOf<String?>(null) }
     var expanded by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Create New Document") },
-        text = {
-            Column {
-                // Document Type Dropdown
+    val scale = remember { androidx.compose.animation.core.Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = 0.6f,
+                stiffness = 300f
+            )
+        )
+    }
+
+    fun dismiss(onComplete: () -> Unit) {
+        coroutineScope.launch {
+            scale.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    dampingRatio = 0.8f,
+                    stiffness = 300f
+                )
+            )
+            onComplete()
+        }
+    }
+
+    Dialog(onDismissRequest = { dismiss(onDismiss) }) {
+        Surface(
+            modifier = Modifier
+                .graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value
+                    alpha = scale.value
+                }
+                .width(500.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    "Create New Document",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
                 ) {
-                    TextField(
+                    OutlinedTextField(
                         value = selectedType ?: "Select document type",
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor()
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -57,41 +108,39 @@ fun CreateDocumentDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Dynamic create flow based on selected type
                 AnimatedContent(
                     targetState = selectedType,
                     transitionSpec = {
-                        fadeIn() + expandVertically() with
-                                fadeOut() + shrinkVertically()
+                        fadeIn() + expandVertically() with fadeOut() + shrinkVertically()
                     }
                 ) { type ->
                     when (type) {
                         "schedule1", "schedule2" -> ScheduleCreateFlow(
+                            onDismiss = { dismiss(onDismiss) },
                             onConfirm = { name, columns, columnNames ->
-                                onConfirm(name, type, columns, columnNames)
+                                dismiss { onConfirm(name, type, columns, columnNames) }
                             }
                         )
-                        // Add more document type flows here
-                        null -> Box {} // Empty box when no type is selected
+                        null -> Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(onClick = { dismiss(onDismiss) }) {
+                                Text("Cancel")
+                            }
+                        }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onDismiss
-            ) {
-                Text("Cancel")
-            }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun ScheduleCreateFlow(
+    onDismiss: () -> Unit,
     onConfirm: (name: String, columns: String, columnNames: List<String>) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
@@ -163,7 +212,7 @@ private fun ScheduleCreateFlow(
             }
         ) { count ->
             // Render text fields for each column
-            Column {
+            Column() {
                 Text("Column Names", style = MaterialTheme.typography.titleMedium)
                 repeat(count) { index ->
                     OutlinedTextField(
@@ -184,17 +233,26 @@ private fun ScheduleCreateFlow(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                if (name.isBlank() || columns.isBlank()) {
-                    showError = true
-                } else {
-                    onConfirm(name, columns, columnNames)
-                }
-            },
-            modifier = Modifier.align(Alignment.End)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Create")
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    if (name.isBlank() || columns.isBlank()) {
+                        showError = true
+                    } else {
+                        onConfirm(name, columns, columnNames)
+                    }
+                }
+            ) {
+                Text("Create")
+            }
         }
 
         if (showError) {

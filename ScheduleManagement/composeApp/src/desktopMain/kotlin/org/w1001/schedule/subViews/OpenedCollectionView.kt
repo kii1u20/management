@@ -1,5 +1,6 @@
 package org.w1001.schedule.subViews
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -7,10 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import org.w1001.schedule.components.mainMenu.CreateDocumentDialog
-import org.w1001.schedule.components.mainMenu.CustomSnackbar
-import org.w1001.schedule.components.mainMenu.MainMenuGrid
-import org.w1001.schedule.components.mainMenu.MainMenuTopBar
+import org.w1001.schedule.components.mainMenu.*
 import org.w1001.schedule.database.DocumentMetadata
 import org.w1001.schedule.database.SpreadsheetRepository
 import org.w1001.schedule.viewModel
@@ -32,6 +30,8 @@ fun OpenedCollectionView(
     var isSuccess by remember { mutableStateOf(true) }
 
     var documentToDelete by remember { mutableStateOf<String?>(null) }
+
+    val scale = remember { Animatable(0f) }
 
     LaunchedEffect(place) {
         try {
@@ -83,37 +83,26 @@ fun OpenedCollectionView(
         )
     }
 
+
     if (documentToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { documentToDelete = null },
-            title = { Text("Delete document") },
-            text = { Text("Are you sure you want to delete \"${documentToDelete}\"?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            val success = repository.deleteDocumentByName(place, collection, documentToDelete!!)
-                            isSuccess = success
-                            val message = if (success) {
-                                documents = repository.loadDocumentMetadata(place, collection)
-                                "Collection deleted successfully"
-                            } else {
-                                "Failed to delete collection"
-                            }
-                            documentToDelete = null
-                            snackbarHostState.showSnackbar(
-                                message = message,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }
-                ) {
-                    Text("Yes")
-                }
+        DeleteObjectDialog(
+            objectName = documentToDelete,
+            dialogTitle = "Delete document",
+            dialogText = "Are you sure you want to delete \"${documentToDelete}\"?",
+            onDismiss = { documentToDelete = null },
+            onConfirmDelete = {
+                repository.deleteDocumentByName(place, collection, documentToDelete!!)
             },
-            dismissButton = {
-                TextButton(onClick = { documentToDelete = null }) {
-                    Text("No")
+            onDeleteFinished = { success, message ->
+                isSuccess = success
+                if (success) {
+                    documents = repository.loadDocumentMetadata(place, collection)
+                }
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        duration = SnackbarDuration.Short
+                    )
                 }
             }
         )

@@ -17,14 +17,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateCollectionDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, type: String) -> Unit,
-    documentTypes: List<String>
+    onConfirm: (name: String) -> Unit
 ) {
     var collectionName by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
-    var selectedType by remember { mutableStateOf(documentTypes.firstOrNull() ?: "") }
-
-    var isVisible by remember { mutableStateOf(true) }
 
     val scale = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
@@ -48,7 +43,6 @@ fun CreateCollectionDialog(
                     stiffness = 300f
                 )
             )
-            isVisible = false
             onComplete()
         }
     }
@@ -83,37 +77,6 @@ fun CreateCollectionDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
-                    OutlinedTextField(
-                        value = selectedType,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Тип документи") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        documentTypes.forEach { type ->
-                            DropdownMenuItem(
-                                text = { Text(type) },
-                                onClick = {
-                                    selectedType = type
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -124,9 +87,9 @@ fun CreateCollectionDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { onConfirm(collectionName, selectedType) },
+                        onClick = { onConfirm(collectionName) },
 //                        onClick = { dismiss { onConfirm(collectionName, selectedType) } },
-                        enabled = collectionName.isNotBlank() && selectedType.isNotBlank()
+                        enabled = collectionName.isNotBlank()
                     ) {
                         Text("Създай")
                     }
