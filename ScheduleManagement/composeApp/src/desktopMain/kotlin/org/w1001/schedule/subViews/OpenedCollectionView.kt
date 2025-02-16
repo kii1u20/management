@@ -125,7 +125,7 @@ fun OpenedCollectionView(
                             isLoading = true // show the loading dialog when the document is being loaded
                             val fullDoc = repository.loadDocument(document.id, place, collection)
                             if (fullDoc != null) {
-                                viewModel.loadDocument(fullDoc)
+                                viewModel.loadDocument(fullDoc) // HANDLE EXCEPTION!
                                 viewModel.currentDatabase = place
                                 viewModel.currentCollection = collection
                             }

@@ -35,6 +35,14 @@ kotlin {
             implementation("org.mongodb:bson-kotlinx:5.3.0")
         }
     }
+
+    sourceSets {
+        val desktopTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+    }
 }
 
 
