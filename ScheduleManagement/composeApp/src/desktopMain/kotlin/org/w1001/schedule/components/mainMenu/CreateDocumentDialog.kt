@@ -4,7 +4,9 @@ package org.w1001.schedule.components.mainMenu
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -93,11 +95,16 @@ private fun ScheduleCreateFlow(
     onConfirm: (name: String, columns: String, columnNames: List<String>) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var columns by remember { mutableStateOf("") }
-    var columnNames by remember { mutableStateOf(listOf<String>()) }
+    var columns by remember { mutableStateOf("1") }
+    val columnNames = remember { mutableStateListOf("Column 1") }
     var showError by remember { mutableStateOf(false) }
+    val verticalScrollState = rememberScrollState()
 
-    Column {
+    val columnCount by derivedStateOf {
+        columns.toIntOrNull() ?: 1
+    }
+
+    Column(modifier = Modifier.verticalScroll(verticalScrollState)) {
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -112,16 +119,26 @@ private fun ScheduleCreateFlow(
             value = columns,
             onValueChange = {
                 if (it.all { char -> char.isDigit() }) {
-                    columns = it
-                    // Initialize or update column names list
-                    val numColumns = it.toIntOrNull() ?: 0
-                    columnNames = when {
-                        numColumns > columnNames.size ->
-                            columnNames + List(numColumns - columnNames.size) { idx ->
-                                "Column ${columnNames.size + idx + 1}"
+                    // Parse the input and clamp it to a minimum of 1
+                    var numColumns = it.toIntOrNull() ?: 1
+                    if (numColumns < 1) numColumns = 1
+
+                    columns = numColumns.toString()
+
+                    // Update the list of column names
+                    when {
+                        numColumns > columnNames.size -> {
+                            columnNames.addAll(
+                                List(numColumns - columnNames.size) { idx ->
+                                    "Column ${columnNames.size + idx + 1}"
+                                }
+                            )
+                        }
+                        numColumns < columnNames.size -> {
+                            while (columnNames.size > numColumns) {
+                                columnNames.removeLast()
                             }
-                        numColumns < columnNames.size -> columnNames.take(numColumns)
-                        else -> columnNames
+                        }
                     }
                 }
             },
@@ -134,44 +151,33 @@ private fun ScheduleCreateFlow(
         Spacer(modifier = Modifier.height(16.dp))
 
         AnimatedContent(
-            targetState = columnNames,
+            targetState = columnCount,
             transitionSpec = {
-                if (targetState.size > initialState.size) {
-                    (fadeIn() + expandVertically(expandFrom = Alignment.Top)) with
+                if (targetState > initialState) {
+                    (fadeIn() + expandVertically(expandFrom = Alignment.Top)) togetherWith
                             fadeOut()
                 } else {
-                    fadeIn() with
+                    fadeIn() togetherWith
                             (fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top))
                 }
             }
-        ) { currentColumnNames ->
-            if (currentColumnNames.isNotEmpty()) {
-                Column {
-                    Text(
-                        "Column Names",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
+        ) { count ->
+            // Render text fields for each column
+            Column {
+                Text("Column Names", style = MaterialTheme.typography.titleMedium)
+                repeat(count) { index ->
+                    OutlinedTextField(
+                        value = columnNames.getOrNull(index) ?: "",
+                        onValueChange = { newName ->
+                            if (index < columnNames.size) {
+                                columnNames[index] = newName
+                            }
+                        },
+                        label = { Text("Column ${index + 1}") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
                     )
-                    currentColumnNames.forEachIndexed { index, columnName ->
-                        key(index) {
-                            OutlinedTextField(
-                                value = columnName,
-                                onValueChange = { newName ->
-                                    columnNames = columnNames.toMutableList().apply {
-                                        this[index] = newName
-                                    }
-                                },
-                                label = { Text("Column ${index + 1}") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp)
-                                    .animateEnterExit(
-                                        enter = fadeIn() + expandVertically(),
-                                        exit = fadeOut() + shrinkVertically()
-                                    )
-                            )
-                        }
-                    }
                 }
             }
         }
