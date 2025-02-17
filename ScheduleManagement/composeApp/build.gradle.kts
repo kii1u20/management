@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    id("dev.hydraulic.conveyor") version "1.5"
+    id("dev.hydraulic.conveyor") version "1.12"
 }
 
 version = "0.1.0"
@@ -14,8 +14,6 @@ kotlin {
         withJava()
     }
 
-    jvmToolchain(21)
-    
     sourceSets {
         val jvmMain by getting
         
@@ -26,8 +24,8 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.materialIconsExtended)
             implementation("dev.chrisbanes.haze:haze:1.3.0")
-            implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.0")
-            implementation("org.mongodb:bson-kotlinx:5.3.0")
+            implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.1")
+            implementation("org.mongodb:bson-kotlinx:5.3.1")
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
