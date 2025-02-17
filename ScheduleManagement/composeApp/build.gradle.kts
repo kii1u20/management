@@ -4,13 +4,20 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    id("dev.hydraulic.conveyor") version "1.5"
 }
 
+version = "0.1.0"
+
 kotlin {
-    jvm("desktop")
+    jvm {
+        withJava()
+    }
+
+    jvmToolchain(21)
     
     sourceSets {
-        val desktopMain by getting
+        val jvmMain by getting
         
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -27,7 +34,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
         }
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation("dev.chrisbanes.haze:haze:1.3.0")
@@ -37,7 +44,7 @@ kotlin {
     }
 
     sourceSets {
-        val desktopTest by getting {
+        val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
@@ -45,15 +52,30 @@ kotlin {
     }
 }
 
+dependencies {
+    linuxAmd64(compose.desktop.linux_x64)
+    macAmd64(compose.desktop.macos_x64)
+    macAarch64(compose.desktop.macos_arm64)
+    windowsAmd64(compose.desktop.windows_x64)
+}
+
+configurations.all {
+    attributes {
+        attribute(Attribute.of("ui", String::class.java), "awt")
+    }
+}
+
 
 compose.desktop {
     application {
         mainClass = "org.w1001.schedule.MainKt"
-
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "org.w1001.schedule"
             packageVersion = "1.0.0"
+        }
+        buildTypes.release.proguard {
+            isEnabled = false
         }
     }
 }
