@@ -7,7 +7,7 @@ plugins {
     id("dev.hydraulic.conveyor") version "1.12"
 }
 
-version = "0.1.0"
+version = "0.1.1"
 
 kotlin {
     jvm {
@@ -15,29 +15,31 @@ kotlin {
     }
 
     sourceSets {
-        val jvmMain by getting
-        
-        commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material)
-            implementation(compose.material3)
-            implementation(compose.materialIconsExtended)
-            implementation("dev.chrisbanes.haze:haze:1.3.0")
-            implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.1")
-            implementation("org.mongodb:bson-kotlinx:5.3.1")
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodel)
-            implementation(libs.androidx.lifecycle.runtime.compose)
-        }
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutines.swing)
-            implementation("dev.chrisbanes.haze:haze:1.3.0")
-            implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.0")
-            implementation("org.mongodb:bson-kotlinx:5.3.0")
+        val jvmMain by getting {
+            kotlin.srcDir(layout.buildDirectory.dir("generated/kotlin"))
+
+            commonMain.dependencies {
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material)
+                implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
+                implementation("dev.chrisbanes.haze:haze:1.3.0")
+                implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.1")
+                implementation("org.mongodb:bson-kotlinx:5.3.1")
+                implementation(compose.ui)
+                implementation(compose.components.resources)
+                implementation(compose.components.uiToolingPreview)
+                implementation(libs.androidx.lifecycle.viewmodel)
+                implementation(libs.androidx.lifecycle.runtime.compose)
+            }
+            jvmMain.dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.kotlinx.coroutines.swing)
+                implementation("dev.chrisbanes.haze:haze:1.3.0")
+                implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.0")
+                implementation("org.mongodb:bson-kotlinx:5.3.0")
+            }
         }
     }
 
@@ -61,6 +63,24 @@ configurations.all {
     attributes {
         attribute(Attribute.of("ui", String::class.java), "awt")
     }
+}
+
+tasks.register("generateBuildConfig") {
+    doLast {
+        val dir = layout.buildDirectory.dir("generated/kotlin/org/w1001/schedule").get().asFile
+        dir.mkdirs()
+        File(dir, "BuildConfig.kt").writeText("""
+            package org.w1001.schedule
+            
+            object BuildConfig {
+                const val VERSION = "${project.version}"
+            }
+        """.trimIndent())
+    }
+}
+
+tasks.named("compileKotlinJvm") {
+    dependsOn("generateBuildConfig")
 }
 
 
