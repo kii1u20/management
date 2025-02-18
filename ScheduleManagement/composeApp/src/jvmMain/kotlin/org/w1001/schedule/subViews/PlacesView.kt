@@ -35,6 +35,7 @@ fun PlacesView(
             places = repository.getDatabases()
             viewModel.currentDatabase = ""
             viewModel.currentCollection = ""
+            viewModel.clearDocumentState()
             isLoading = false
         } catch (e: Exception) {
             errorMessage = when (e) {

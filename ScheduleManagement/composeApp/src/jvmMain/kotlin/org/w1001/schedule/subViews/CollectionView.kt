@@ -38,6 +38,7 @@ fun CollectionView(
             collections = repository.getCollectionNames(place)
             viewModel.currentDatabase = place
             viewModel.currentCollection = ""
+            viewModel.clearDocumentState()
             isLoading = false
         } catch (e: Exception) {
             errorMessage = when (e) {
@@ -158,6 +159,7 @@ fun CollectionView(
                                         collections = repository.getCollectionNames(place)
                                         viewModel.currentDatabase = place
                                         viewModel.currentCollection = ""
+                                        viewModel.clearDocumentState()
                                     } catch (e: Exception) {
                                         errorMessage = when (e) {
                                             is MongoSocketException -> "No internet connection"

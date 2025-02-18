@@ -30,6 +30,10 @@ class AppViewModel {
     val repository = SpreadsheetRepository()
     val specialMergeSet = hashSetOf("A", "B", "C")
 
+    fun clearDocumentState() {
+        _documentState.value = DocumentState.Empty
+    }
+
     fun createNewSchedule(
         columns: String,
         columnNames: SnapshotStateList<MutableState<String>>,

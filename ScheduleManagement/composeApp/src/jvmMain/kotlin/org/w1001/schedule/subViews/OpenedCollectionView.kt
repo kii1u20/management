@@ -40,6 +40,7 @@ fun OpenedCollectionView(
         try {
             documents = repository.loadDocumentMetadata(place, collection)
             viewModel.currentCollection = collection
+            viewModel.clearDocumentState()
             isLoading = false
         } catch (e: Exception) {
             errorMessage = when (e) {
