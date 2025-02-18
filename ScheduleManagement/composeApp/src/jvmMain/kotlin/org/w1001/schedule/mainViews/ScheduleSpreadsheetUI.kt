@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.mongodb.MongoSocketException
 import com.mongodb.MongoTimeoutException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import org.w1001.schedule.*
@@ -26,6 +27,7 @@ import org.w1001.schedule.database.SpreadsheetRepository
 
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
 
+private val logger = KotlinLogging.logger("ScheduleSpreadsheetUI.kt")
 @Composable
 fun ScheduleSpreadsheetUI(
     viewModel: AppViewModel
@@ -41,6 +43,7 @@ fun ScheduleSpreadsheetUI(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val docState = viewModel.documentState.value as DocumentState.ScheduleState
+
 
     MaterialTheme {
         if (viewModel.isSaving) {
@@ -108,6 +111,7 @@ fun ScheduleSpreadsheetUI(
                         try {
                             viewModel.saveDocument()
                         } catch (e: Exception) {
+                            logger.error { e.stackTraceToString() }
                             errorMessage = when (e) {
                                 is MongoSocketException -> "No internet connection"
                                 is MongoTimeoutException -> "No internet connection"

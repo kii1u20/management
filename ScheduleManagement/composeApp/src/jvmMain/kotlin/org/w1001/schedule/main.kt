@@ -16,14 +16,17 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import com.mongodb.MongoSocketException
 import com.mongodb.MongoTimeoutException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.w1001.schedule.components.WarningDialog
 
+private val logger = KotlinLogging.logger("main.kt")
 val viewModel = AppViewModel()
 fun main() = application {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
 
     Window(
         onCloseRequest = { if (!viewModel.inMainMenu.value) showExitDialog = true else exitApplication() },
@@ -43,6 +46,7 @@ fun main() = application {
                                     viewModel.saveDocument()
                                     exitApplication()
                                 } catch (e: Exception) {
+                                    logger.error { e.stackTraceToString() }
                                     errorMessage = when (e) {
                                         is MongoSocketException -> "No internet connection"
                                         is MongoTimeoutException -> "No internet connection"
@@ -104,8 +108,10 @@ fun main() = application {
                 color = MaterialTheme.colorScheme.background
             ) {
                 if (viewModel.inMainMenu.value) {
+                    logger.info { "loading MainMenuV2" }
                     MainMenuV2(viewModel)
                 } else {
+                    logger.info { "loading DocumentUI" }
                     DocumentUI(viewModel)
                 }
             }

@@ -2,6 +2,7 @@ package org.w1001.schedule
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.bson.types.ObjectId
 import org.w1001.schedule.database.SpreadsheetDocument
 import org.w1001.schedule.database.SpreadsheetRepository
@@ -30,8 +31,11 @@ class AppViewModel {
     val repository = SpreadsheetRepository()
     val specialMergeSet = hashSetOf("A", "B", "C")
 
+    private val logger = KotlinLogging.logger("AppViewModel.kt")
+
     fun clearDocumentState() {
         _documentState.value = DocumentState.Empty
+        logger.info { "Document state cleared" }
     }
 
     fun createNewSchedule(
@@ -61,6 +65,7 @@ class AppViewModel {
         _documentState.value = scheduleState
         currentDocumentType = if (isSchedule1) DocumentType.Schedule1 else DocumentType.Schedule2
         inMainMenu.value = false
+        logger.info { "New schedule document created" }
     }
 
     fun loadDocument(document: SpreadsheetDocument) {
@@ -97,6 +102,7 @@ class AppViewModel {
         currentDocumentId = document.id
         loadedDocumentName = document.name
         inMainMenu.value = false
+        logger.info { "Schedule Document loaded: ${document.name} ; database: $currentDatabase ; collection: $currentCollection" }
     }
 
     private fun createScheduleCells(
@@ -126,6 +132,7 @@ class AppViewModel {
         loadedDocumentName = null
         currentDocumentType = null
         _documentState.value = DocumentState.Empty
+        logger.info { "Loaded document cleared" }
     }
 
     suspend fun saveDocument() {
@@ -154,6 +161,7 @@ class AppViewModel {
                 databaseName = currentDatabase,
                 collectionName = currentCollection
             )
+            logger.info { "Schedule Document updated: ${state.documentName.value} ; database: $currentDatabase ; collection: $currentCollection" }
         } else {
             currentDocumentId = repository.saveSpreadsheet(
                 type = documentType,
@@ -165,6 +173,7 @@ class AppViewModel {
             )
             isDocumentLoaded = true
             loadedDocumentName = state.documentName.value
+            logger.info { "Schedule Document saved: ${state.documentName.value} ; database: $currentDatabase ; collection: $currentCollection" }
         }
     }
 }

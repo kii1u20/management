@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w1001.schedule.CalcStep
 import org.w1001.schedule.CellData
 import org.w1001.schedule.MathEngine.Companion.evaluateStep
@@ -18,6 +19,8 @@ val specialCharMap = mapOf(
     "A" to 8,
     // Add other special characters and their values here
 )
+
+private val logger = KotlinLogging.logger("CalcCell.kt")
 
 @Composable
 fun calcCell(
@@ -42,6 +45,7 @@ fun calcCell(
         val result = try {
             evaluateStep(calculation, cells)
         } catch (e: Exception) {
+            logger.error { e.stackTraceToString() }
             0
         }
 

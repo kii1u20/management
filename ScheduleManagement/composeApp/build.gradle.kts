@@ -32,6 +32,8 @@ kotlin {
                 implementation(compose.components.uiToolingPreview)
                 implementation(libs.androidx.lifecycle.viewmodel)
                 implementation(libs.androidx.lifecycle.runtime.compose)
+                implementation("io.github.oshai:kotlin-logging-jvm:7.0.4")
+                implementation("ch.qos.logback:logback-classic:1.5.16")
             }
             jvmMain.dependencies {
                 implementation(compose.desktop.currentOs)
@@ -39,6 +41,8 @@ kotlin {
                 implementation("dev.chrisbanes.haze:haze:1.3.0")
                 implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.3.0")
                 implementation("org.mongodb:bson-kotlinx:5.3.0")
+                implementation("io.github.oshai:kotlin-logging-jvm:7.0.4")
+                implementation("ch.qos.logback:logback-classic:1.5.16")
             }
         }
     }

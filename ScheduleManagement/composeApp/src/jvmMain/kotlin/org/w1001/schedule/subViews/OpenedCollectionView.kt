@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mongodb.MongoSocketException
 import com.mongodb.MongoTimeoutException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.w1001.schedule.components.WarningDialog
 import org.w1001.schedule.components.mainMenu.*
@@ -16,6 +17,7 @@ import org.w1001.schedule.database.DocumentMetadata
 import org.w1001.schedule.database.SpreadsheetRepository
 import org.w1001.schedule.viewModel
 
+private val logger = KotlinLogging.logger("OpenedCollectionView.kt")
 @Composable
 fun OpenedCollectionView(
     place: String,
@@ -36,6 +38,7 @@ fun OpenedCollectionView(
 
     val scale = remember { Animatable(0f) }
 
+
     LaunchedEffect(place) {
         try {
             documents = repository.loadDocumentMetadata(place, collection)
@@ -43,6 +46,7 @@ fun OpenedCollectionView(
             viewModel.clearDocumentState()
             isLoading = false
         } catch (e: Exception) {
+            logger.error { e.stackTraceToString() }
             errorMessage = when (e) {
                 is MongoSocketException -> "No internet connection"
                 is MongoTimeoutException -> "No internet connection"
@@ -81,6 +85,8 @@ fun OpenedCollectionView(
                     } else {
                         "A document with this name already exists"
                     }
+
+                    logger.info { message }
 
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar(
@@ -173,6 +179,7 @@ fun OpenedCollectionView(
                                         documents = repository.loadDocumentMetadata(place, collection)
                                         viewModel.currentCollection = collection
                                     } catch (e: Exception) {
+                                        logger.error { e.stackTraceToString() }
                                         errorMessage = when (e) {
                                             is MongoSocketException -> "No internet connection"
                                             is MongoTimeoutException -> "No internet connection"
@@ -201,8 +208,10 @@ fun OpenedCollectionView(
                                     viewModel.currentCollection = collection
                                 } else {
                                     errorMessage = "Document not found"
+                                    logger.error { errorMessage }
                                 }
                             } catch (e: Exception) {
+                                logger.error { e.stackTraceToString() }
                                 isSuccess = false
                                 errorMessage = when (e) {
                                     is MongoSocketException,

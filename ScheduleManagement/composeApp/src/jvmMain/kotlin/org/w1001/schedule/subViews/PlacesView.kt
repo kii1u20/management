@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mongodb.MongoSocketException
 import com.mongodb.MongoTimeoutException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.w1001.schedule.components.WarningDialog
 import org.w1001.schedule.components.mainMenu.MainMenuGrid
@@ -18,6 +19,7 @@ import org.w1001.schedule.components.mainMenu.MainMenuTopBar
 import org.w1001.schedule.database.SpreadsheetRepository
 import org.w1001.schedule.viewModel
 
+private val logger = KotlinLogging.logger("PlacesView.kt")
 @Composable
 fun PlacesView(
     repository: SpreadsheetRepository,
@@ -38,6 +40,7 @@ fun PlacesView(
             viewModel.clearDocumentState()
             isLoading = false
         } catch (e: Exception) {
+            logger.error { e.stackTraceToString()}
             errorMessage = when (e) {
                 is MongoSocketException -> "No internet connection"
                 is MongoTimeoutException -> "No internet connection"
@@ -99,6 +102,7 @@ fun PlacesView(
                                     viewModel.currentDatabase = ""
                                     viewModel.currentCollection = ""
                                 } catch (e: Exception) {
+                                    logger.error { e.stackTraceToString()}
                                     errorMessage = when (e) {
                                         is MongoSocketException -> "No internet connection"
                                         is MongoTimeoutException -> "No internet connection"

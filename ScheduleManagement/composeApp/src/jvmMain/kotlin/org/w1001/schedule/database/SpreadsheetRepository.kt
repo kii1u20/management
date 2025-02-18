@@ -5,6 +5,7 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.MongoWriteException
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
@@ -12,6 +13,7 @@ import org.w1001.schedule.CellData
 import java.util.concurrent.TimeUnit
 
 class SpreadsheetRepository {
+    private val logger = KotlinLogging.logger("SpreadsheetRepository.kt")
     //MongoDB Atlas backend connection string
     private val connectionString =
         "mongodb+srv://ivanovikristian01:hBL5k2xzhg943z3s@cluster0.ckezs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -70,6 +72,7 @@ class SpreadsheetRepository {
             collection.insertOne(document)
             return document.id
         } catch (e: MongoWriteException) {
+            logger.error { e.stackTraceToString() }
             if (e.error.code == 11000) { // Duplicate key error
                 throw IllegalArgumentException("A document with name '$name' already exists")
             }
@@ -169,8 +172,7 @@ class SpreadsheetRepository {
             database.createCollection(collectionName)
             true
         } catch (e: Exception) {
-            // Log the error if needed
-            println("Failed to create collection: ${e.message}")
+            logger.error { e.stackTraceToString() }
             false
         }
     }
@@ -182,6 +184,7 @@ class SpreadsheetRepository {
             val result = collection.deleteOne(org.bson.Document("name", documentName))
             return result.deletedCount > 0
         } catch (e: Exception) {
+            logger.error { e.stackTraceToString() }
             false
         }
     }
@@ -192,6 +195,7 @@ class SpreadsheetRepository {
             database.getCollection<SpreadsheetDocument>(collectionName).drop()
             true
         } catch (e: Exception) {
+            logger.error { e.stackTraceToString() }
             false
         }
     }
