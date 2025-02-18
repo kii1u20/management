@@ -2,15 +2,15 @@ package org.w1001.schedule.components.mainMenu
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 @Composable
@@ -26,6 +26,8 @@ fun DeleteObjectDialog(
 
     val scale = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
+
+    val isDeleting = remember { mutableStateOf(false) }
 
     fun dismissDialog() {
         coroutineScope.launch {
@@ -54,22 +56,33 @@ fun DeleteObjectDialog(
         title = { Text(dialogTitle) },
         text = { Text(dialogText) },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    coroutineScope.launch {
-                        val success = onConfirmDelete()
-                        val message = if (success) "Deleted successfully" else "Failed to delete"
-                        onDeleteFinished(success, message)
-                        dismissDialog()
+            if (isDeleting.value) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(38.dp)
+                )
+            } else {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            isDeleting.value = true
+                            val success = onConfirmDelete()
+                            val message = if (success) "Deleted successfully" else "Failed to delete"
+                            onDeleteFinished(success, message)
+                            dismissDialog()
+                        }
                     }
+                ) {
+                    Text("Yes")
                 }
-            ) {
-                Text("Yes")
             }
         },
         dismissButton = {
-            TextButton(onClick = { dismissDialog() }) {
-                Text("No")
+            if (!isDeleting.value) {
+                TextButton(onClick = { dismissDialog() }) {
+                    Text("No")
+                }
+            } else {
+                Text("Изтриване...")
             }
         }
     )

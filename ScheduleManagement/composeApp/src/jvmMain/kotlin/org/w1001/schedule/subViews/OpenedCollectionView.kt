@@ -7,7 +7,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mongodb.MongoSocketException
+import com.mongodb.MongoTimeoutException
 import kotlinx.coroutines.launch
+import org.w1001.schedule.components.WarningDialog
 import org.w1001.schedule.components.mainMenu.*
 import org.w1001.schedule.database.DocumentMetadata
 import org.w1001.schedule.database.SpreadsheetRepository
@@ -22,7 +25,7 @@ fun OpenedCollectionView(
 ) {
     var documents by remember { mutableStateOf<List<DocumentMetadata>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -39,9 +42,20 @@ fun OpenedCollectionView(
             viewModel.currentCollection = collection
             isLoading = false
         } catch (e: Exception) {
-            error = e.message
+            errorMessage = when (e) {
+                is MongoSocketException -> "No internet connection"
+                is MongoTimeoutException -> "No internet connection"
+                else -> e.message ?: "An unknown error occurred"
+            }
             isLoading = false
         }
+    }
+
+    if (errorMessage != null) {
+        WarningDialog(
+            message = errorMessage!!,
+            onDismiss = { errorMessage = null }
+        )
     }
 
     if (showCreateDialog) {
@@ -140,24 +154,64 @@ fun OpenedCollectionView(
                     }
                 }
 
-                error != null -> Text(
-                    text = "Error: $error",
-                    color = MaterialTheme.colorScheme.error
-                )
-
-                documents.isEmpty() -> Text("No collections found")
+                documents.isEmpty() -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "No collections available",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    isLoading = true
+                                    try {
+                                        documents = repository.loadDocumentMetadata(place, collection)
+                                        viewModel.currentCollection = collection
+                                    } catch (e: Exception) {
+                                        errorMessage = when (e) {
+                                            is MongoSocketException -> "No internet connection"
+                                            is MongoTimeoutException -> "No internet connection"
+                                            else -> e.message ?: "An unknown error occurred"
+                                        }
+                                    } finally {
+                                        isLoading = false
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("Опитай пак")
+                        }
+                    }
+                }
                 else -> MainMenuGrid(documents.map { it.name }, onObjectSelected = { name ->
                     val document = documents.find { it.name == name }
                     if (document != null) {
                         coroutineScope.launch {
-                            isLoading = true // show the loading dialog when the document is being loaded
-                            val fullDoc = repository.loadDocument(document.id, place, collection)
-                            if (fullDoc != null) {
-                                viewModel.loadDocument(fullDoc) // HANDLE EXCEPTION!
-                                viewModel.currentDatabase = place
-                                viewModel.currentCollection = collection
+                            try {
+                                isLoading = true
+                                val fullDoc = repository.loadDocument(document.id, place, collection)
+                                if (fullDoc != null) {
+                                    viewModel.loadDocument(fullDoc)
+                                    viewModel.currentDatabase = place
+                                    viewModel.currentCollection = collection
+                                } else {
+                                    errorMessage = "Document not found"
+                                }
+                            } catch (e: Exception) {
+                                isSuccess = false
+                                errorMessage = when (e) {
+                                    is MongoSocketException,
+                                    is MongoTimeoutException -> "No internet connection"
+                                    is IllegalArgumentException -> "Invalid document type"
+                                    else -> e.message ?: "An unknown error occurred"
+                                }
+                            } finally {
+                                isLoading = false
                             }
-                            isLoading = false
                         }
                     }
                 }, onDeleteObject = { document ->

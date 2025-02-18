@@ -6,7 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mongodb.MongoSocketException
+import com.mongodb.MongoTimeoutException
 import kotlinx.coroutines.launch
+import org.w1001.schedule.components.WarningDialog
 import org.w1001.schedule.components.mainMenu.*
 import org.w1001.schedule.database.SpreadsheetRepository
 import org.w1001.schedule.viewModel
@@ -21,7 +24,7 @@ fun CollectionView(
 ) {
     var collections by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -37,9 +40,20 @@ fun CollectionView(
             viewModel.currentCollection = ""
             isLoading = false
         } catch (e: Exception) {
-            error = e.message
+            errorMessage = when (e) {
+                is MongoSocketException -> "No internet connection"
+                is MongoTimeoutException -> "No internet connection"
+                else -> e.message ?: "An unknown error occurred"
+            }
             isLoading = false
         }
+    }
+
+    if (errorMessage != null) {
+        WarningDialog(
+            message = errorMessage!!,
+            onDismiss = { errorMessage = null }
+        )
     }
 
     if (showCreateDialog) {
@@ -126,12 +140,41 @@ fun CollectionView(
                     }
                 }
 
-                error != null -> Text(
-                    text = "Error: $error",
-                    color = MaterialTheme.colorScheme.error
-                )
+                collections.isEmpty() -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "No collections available",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    isLoading = true
+                                    try {
+                                        collections = repository.getCollectionNames(place)
+                                        viewModel.currentDatabase = place
+                                        viewModel.currentCollection = ""
+                                    } catch (e: Exception) {
+                                        errorMessage = when (e) {
+                                            is MongoSocketException -> "No internet connection"
+                                            is MongoTimeoutException -> "No internet connection"
+                                            else -> e.message ?: "An unknown error occurred"
+                                        }
+                                    } finally {
+                                        isLoading = false
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("Опитай пак")
+                        }
+                    }
+                }
 
-                collections.isEmpty() -> Text("No collections found")
                 else -> MainMenuGrid(collections, onCollectionSelected, onDeleteObject = { collectionName ->
                     collectionToDelete = collectionName
                 }, showDeleteButton = true)

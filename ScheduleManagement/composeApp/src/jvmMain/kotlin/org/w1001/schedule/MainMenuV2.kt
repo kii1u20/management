@@ -3,7 +3,6 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import org.w1001.schedule.AppViewModel
-import org.w1001.schedule.database.SpreadsheetRepository
 import org.w1001.schedule.subViews.CollectionView
 import org.w1001.schedule.subViews.OpenedCollectionView
 import org.w1001.schedule.subViews.PlacesView
@@ -15,7 +14,6 @@ fun MainMenuV2(
 ) {
     var selectedPlace by remember { mutableStateOf<String?>(null) }
     var selectedCollection by remember { mutableStateOf<String?>(null) }
-    val repository = remember { SpreadsheetRepository() }
 
     AnimatedContent(
         targetState = Triple(selectedPlace, selectedCollection, null),
@@ -49,12 +47,12 @@ fun MainMenuV2(
     ) { (place, collection, _) ->
         when {
             place == null -> {
-                PlacesView(repository) { selectedPlace = it }
+                PlacesView(viewModel.repository) { selectedPlace = it }
             }
             collection == null -> {
                 CollectionView(
                     place = place,
-                    repository = repository,
+                    repository = viewModel.repository,
                     onBack = { selectedPlace = null },
                     onCollectionSelected = { selectedCollection = it }
                 )
@@ -63,7 +61,7 @@ fun MainMenuV2(
                 OpenedCollectionView(
                     place = place,
                     collection = collection,
-                    repository = repository,
+                    repository = viewModel.repository,
                     onBack = { selectedCollection = null }
                 )
             }

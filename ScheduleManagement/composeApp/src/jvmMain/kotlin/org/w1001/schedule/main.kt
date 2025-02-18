@@ -14,6 +14,8 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
+import com.mongodb.MongoSocketException
+import com.mongodb.MongoTimeoutException
 import kotlinx.coroutines.launch
 import org.w1001.schedule.components.WarningDialog
 
@@ -41,7 +43,11 @@ fun main() = application {
                                     viewModel.saveDocument()
                                     exitApplication()
                                 } catch (e: Exception) {
-                                    errorMessage = "Error saving document: ${e.message}"
+                                    errorMessage = when (e) {
+                                        is MongoSocketException -> "No internet connection"
+                                        is MongoTimeoutException -> "No internet connection"
+                                        else -> e.message ?: "An unknown error occurred"
+                                    }
                                     viewModel.isSaving = false
                                 }
                             }

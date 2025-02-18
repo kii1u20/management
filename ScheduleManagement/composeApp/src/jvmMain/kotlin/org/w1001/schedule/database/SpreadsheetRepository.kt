@@ -1,5 +1,7 @@
 package org.w1001.schedule.database
 
+import com.mongodb.ConnectionString
+import com.mongodb.MongoClientSettings
 import com.mongodb.MongoWriteException
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
@@ -7,6 +9,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 import org.w1001.schedule.CellData
+import java.util.concurrent.TimeUnit
 
 class SpreadsheetRepository {
     //MongoDB Atlas backend connection string
@@ -15,7 +18,25 @@ class SpreadsheetRepository {
     //Azure CosmosDB for MongoDB backend connection string
 //    private val connectionString =
 //        "mongodb://managementapp:KdfhqDIK0oLdoYZ7vJby9QC7l0cqFRdGRPXENb3ofz89BeMCPrgqqVZrJ8kdcJCQASGaFbiuRfwRACDbMQDmkw==@managementapp.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@managementapp@"
-    private val client = MongoClient.create(connectionString)
+//    private val client = MongoClient.create(connectionString)
+    //----------------------------------- With custom timeouts -----------------------------------
+    private val settings = MongoClientSettings.builder()
+        .applyConnectionString(ConnectionString(connectionString))
+        .applyToSocketSettings { builder ->
+            builder.connectTimeout(8, TimeUnit.SECONDS)
+            builder.readTimeout(8, TimeUnit.SECONDS)
+        }
+        .applyToServerSettings { builder ->
+            builder.heartbeatFrequency(10, TimeUnit.SECONDS)
+            builder.minHeartbeatFrequency(500, TimeUnit.MILLISECONDS)
+        }
+        .applyToClusterSettings { builder ->
+            builder.serverSelectionTimeout(8, TimeUnit.SECONDS)
+        }
+        .build()
+
+    private val client = MongoClient.create(settings)
+    //----------------------------------- With custom timeouts -----------------------------------
 
 //    private suspend fun ensureUniqueNameIndex(databaseName: String, collectionName: String) {
 //        val database = client.getDatabase(databaseName)
@@ -155,15 +176,19 @@ class SpreadsheetRepository {
     }
 
     suspend fun deleteDocumentByName(databaseName: String, collectionName: String, documentName: String): Boolean {
-        val database = client.getDatabase(databaseName)
-        val collection = database.getCollection<SpreadsheetDocument>(collectionName)
-        val result = collection.deleteOne(org.bson.Document("name", documentName))
-        return result.deletedCount > 0
+        return try {
+            val database = client.getDatabase(databaseName)
+            val collection = database.getCollection<SpreadsheetDocument>(collectionName)
+            val result = collection.deleteOne(org.bson.Document("name", documentName))
+            return result.deletedCount > 0
+        } catch (e: Exception) {
+            false
+        }
     }
 
     suspend fun deleteCollection(databaseName: String, collectionName: String): Boolean {
-        val database = client.getDatabase(databaseName)
         return try {
+            val database = client.getDatabase(databaseName)
             database.getCollection<SpreadsheetDocument>(collectionName).drop()
             true
         } catch (e: Exception) {

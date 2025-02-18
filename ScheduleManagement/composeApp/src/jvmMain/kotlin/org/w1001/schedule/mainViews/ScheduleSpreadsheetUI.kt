@@ -13,6 +13,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.mongodb.MongoSocketException
+import com.mongodb.MongoTimeoutException
 import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import org.w1001.schedule.*
@@ -106,7 +108,11 @@ fun ScheduleSpreadsheetUI(
                         try {
                             viewModel.saveDocument()
                         } catch (e: Exception) {
-                            errorMessage = e.message ?: "An unknown error occurred"
+                            errorMessage = when (e) {
+                                is MongoSocketException -> "No internet connection"
+                                is MongoTimeoutException -> "No internet connection"
+                                else -> e.message ?: "An unknown error occurred"
+                            }
                             viewModel.isSaving = false
                         }
                     }
