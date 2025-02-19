@@ -65,7 +65,7 @@ fun ScheduleSpreadsheetUI(
                 selectedCell = null
             })
         }) {
-            Column(Modifier.weight(0.7f)) {
+            Column(Modifier.weight(0.8f)) {
                 HeadingRow(
                     workTime = docState.workTime.value,
                     columns = docState.numberOfColumns.value.toInt(),
@@ -74,18 +74,18 @@ fun ScheduleSpreadsheetUI(
                     docState = docState
                 )
 
-                Row() {
+                Row(modifier = Modifier.fillMaxSize()) {
                     Column(
-                        Modifier.verticalScroll(verticalScrollState), // Make the column scrollable
+                        Modifier.verticalScroll(verticalScrollState).width(cellSize.value.width), // Make the column scrollable
                         horizontalAlignment = Alignment.Start
                     ) {
                         for (i in docState.cells.indices) {
                             createDayCell(i, selectedCell)
                         }
                     }
-                    Column(
+                    Column( //NOT FILING MAX SIZE OF ROW
                         Modifier.verticalScroll(verticalScrollState)
-                            .horizontalScroll(horizontalScrollState),
+                            .horizontalScroll(horizontalScrollState).weight(1f), // Make the column scrollable
                         horizontalAlignment = Alignment.Start
                     ) {
                         for (i in docState.cells.indices) {
@@ -123,7 +123,7 @@ fun ScheduleSpreadsheetUI(
                         }
                     }
                 },
-                modifier = Modifier.weight(0.3f)
+                modifier = Modifier.weight(0.2f)
             )
         }
     }
@@ -185,7 +185,8 @@ private fun ScheduleRow(
                                 isSelected = selectedCell == Pair(rowIndex, group * groupSize + idx),
                                 onClick = { onCellSelected(Pair(rowIndex, group * groupSize + idx)) },
                                 enabled = true,
-                                modifier = Modifier.size(cellSize.value).recomposeHighlighter()
+                                modifier = Modifier.size(cellSize.value)
+//                                    .recomposeHighlighter()
                             )
                         }
 //                    }

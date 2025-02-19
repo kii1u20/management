@@ -1,11 +1,13 @@
 package org.w1001.schedule
 
 import MainMenuV2
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -14,72 +16,22 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
-import com.mongodb.MongoSocketException
-import com.mongodb.MongoTimeoutException
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.launch
 import org.w1001.schedule.components.WarningDialog
+import org.w1001.schedule.components.exitApplicationDialog
 
 private val logger = KotlinLogging.logger("main.kt")
 val viewModel = AppViewModel()
 fun main() = application {
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var showExitDialog by remember { mutableStateOf(false) }
+    val errorMessage = remember { mutableStateOf<String?>(null) }
+    val showExitDialog = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-
     Window(
-        onCloseRequest = { if (!viewModel.inMainMenu.value) showExitDialog = true else exitApplication() },
+        onCloseRequest = { if (!viewModel.inMainMenu.value) showExitDialog.value = true else exitApplication() },
         title = "ScheduleManagement v${BuildConfig.VERSION}",
         state = WindowState(size = DpSize(1400.dp, 900.dp), placement = WindowPlacement.Floating),
     ) {
-        if (showExitDialog) {
-            AlertDialog(
-                onDismissRequest = { showExitDialog = false },
-                title = { Text("Save and Exit") },
-                text = { Text("Do you want to save before exiting?") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                try {
-                                    viewModel.saveDocument()
-                                    exitApplication()
-                                } catch (e: Exception) {
-                                    logger.error { e.stackTraceToString() }
-                                    errorMessage = when (e) {
-                                        is MongoSocketException -> "No internet connection"
-                                        is MongoTimeoutException -> "No internet connection"
-                                        else -> e.message ?: "An unknown error occurred"
-                                    }
-                                    viewModel.isSaving = false
-                                }
-                            }
-                        }
-                    ) {
-                        Text("Save and Exit")
-                    }
-                },
-                dismissButton = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { exitApplication() }) {
-                            Text("Exit without saving")
-                        }
-                        Button(onClick = { showExitDialog = false }) {
-                            Text("Cancel")
-                        }
-                    }
-                }
-            )
-        }
-
-        if (errorMessage != null) {
-            WarningDialog(
-                message = errorMessage!!,
-                onDismiss = { errorMessage = null }
-            )
-        }
-
         MaterialTheme(
             colorScheme = lightColorScheme(
                 primary = Color(0xFF825500),
@@ -103,6 +55,22 @@ fun main() = application {
                 outline = Color(0xFF817567)
             )
         ) {
+            if (showExitDialog.value) {
+                exitApplicationDialog(
+                    exitApplication = { exitApplication()},
+                    showExitDialog = showExitDialog,
+                    viewModel = viewModel,
+                    errorMessage = errorMessage
+                )
+            }
+
+            if (errorMessage.value != null) {
+                WarningDialog(
+                    message = errorMessage.value!!,
+                    onDismiss = { errorMessage.value = null }
+                )
+            }
+
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
@@ -128,4 +96,3 @@ fun main() = application {
 //            }
 //        }
 }
-
