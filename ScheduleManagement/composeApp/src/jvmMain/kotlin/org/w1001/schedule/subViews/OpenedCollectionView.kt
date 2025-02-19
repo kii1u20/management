@@ -26,6 +26,7 @@ fun OpenedCollectionView(
     onBack: () -> Unit
 ) {
     var documents by remember { mutableStateOf<List<DocumentMetadata>>(emptyList()) }
+    var documentNames by remember { mutableStateOf(HashSet<String>()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -42,6 +43,7 @@ fun OpenedCollectionView(
     LaunchedEffect(place) {
         try {
             documents = repository.loadDocumentMetadata(place, collection)
+            documentNames = documents.mapTo(HashSet()) { it.name }
             viewModel.currentCollection = collection
             viewModel.clearDocumentState()
             isLoading = false
@@ -100,7 +102,8 @@ fun OpenedCollectionView(
 //                    }
                 }
             },
-            documentTypes = viewModel.documentTypes
+            documentTypes = viewModel.documentTypes,
+            isUniqueName = { name -> !documentNames.contains(name) }
         )
     }
 
@@ -118,6 +121,7 @@ fun OpenedCollectionView(
                 isSuccess = success
                 if (success) {
                     documents = repository.loadDocumentMetadata(place, collection)
+                    documentNames = documents.mapTo(HashSet()) { it.name }
                 }
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
@@ -177,6 +181,7 @@ fun OpenedCollectionView(
                                     isLoading = true
                                     try {
                                         documents = repository.loadDocumentMetadata(place, collection)
+                                        documentNames = documents.mapTo(HashSet()) { it.name }
                                         viewModel.currentCollection = collection
                                     } catch (e: Exception) {
                                         logger.error { e.stackTraceToString() }

@@ -21,7 +21,6 @@ class AppViewModel {
     // Document metadata
     var currentDocumentId by mutableStateOf<ObjectId?>(null)
     var isDocumentLoaded by mutableStateOf(false)
-    var loadedDocumentName by mutableStateOf<String?>(null)
     var currentDocumentType by mutableStateOf<DocumentType?>(null)
 
     //Database metadata
@@ -100,7 +99,6 @@ class AppViewModel {
         currentDocumentType = if (isSchedule1) DocumentType.Schedule1 else DocumentType.Schedule2
         isDocumentLoaded = true
         currentDocumentId = document.id
-        loadedDocumentName = document.name
         inMainMenu.value = false
         logger.info { "Schedule Document loaded: ${document.name} ; database: $currentDatabase ; collection: $currentCollection" }
     }
@@ -129,7 +127,6 @@ class AppViewModel {
     fun clearLoadedDocument() {
         isDocumentLoaded = false
         currentDocumentId = null
-        loadedDocumentName = null
         currentDocumentType = null
         _documentState.value = DocumentState.Empty
         logger.info { "Loaded document cleared" }
@@ -157,7 +154,7 @@ class AppViewModel {
                 type = documentType,
                 columnNames = state.columnNames.map { it.value },
                 cells = state.cells,
-                name = loadedDocumentName!!,
+                name = state.documentName.value,
                 databaseName = currentDatabase,
                 collectionName = currentCollection
             )
@@ -172,7 +169,6 @@ class AppViewModel {
                 collectionName = currentCollection
             )
             isDocumentLoaded = true
-            loadedDocumentName = state.documentName.value
             logger.info { "Schedule Document saved: ${state.documentName.value} ; database: $currentDatabase ; collection: $currentCollection" }
         }
     }

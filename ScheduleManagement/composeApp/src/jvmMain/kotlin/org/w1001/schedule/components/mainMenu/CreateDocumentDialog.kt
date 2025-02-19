@@ -24,7 +24,8 @@ import kotlinx.coroutines.launch
 fun CreateDocumentDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, type: String, columns: String, columnNames: List<String>) -> Unit,
-    documentTypes: List<String>
+    documentTypes: List<String>,
+    isUniqueName: (String) -> Boolean
 ) {
     var selectedType by remember { mutableStateOf<String?>(null) }
     var expanded by remember { mutableStateOf(false) }
@@ -63,7 +64,7 @@ fun CreateDocumentDialog(
                     scaleY = scale.value
                     alpha = scale.value
                 }
-                .width(500.dp),
+                .width(600.dp),
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp
@@ -119,8 +120,10 @@ fun CreateDocumentDialog(
                             onDismiss = { dismiss(onDismiss) },
                             onConfirm = { name, columns, columnNames ->
                                 dismiss { onConfirm(name, type, columns, columnNames) }
-                            }
+                            },
+                            isUniqueName = isUniqueName
                         )
+
                         null -> Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End,
@@ -141,7 +144,8 @@ fun CreateDocumentDialog(
 @Composable
 private fun ScheduleCreateFlow(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, columns: String, columnNames: List<String>) -> Unit
+    onConfirm: (name: String, columns: String, columnNames: List<String>) -> Unit,
+    isUniqueName: (String) -> Boolean
 ) {
     var name by remember { mutableStateOf("") }
     var columns by remember { mutableStateOf("1") }
@@ -158,7 +162,7 @@ private fun ScheduleCreateFlow(
             value = name,
             onValueChange = { name = it },
             label = { Text("Document Name") },
-            isError = showError && name.isBlank(),
+            isError = showError && (name.isBlank() || !isUniqueName(name)),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -169,10 +173,9 @@ private fun ScheduleCreateFlow(
             onValueChange = {
                 if (it.all { char -> char.isDigit() }) {
                     // Parse the input and clamp it to a minimum of 1
-                    var numColumns = it.toIntOrNull() ?: 1
-                    if (numColumns < 1) numColumns = 1
+                    columns = it
 
-                    columns = numColumns.toString()
+                    val numColumns = it.toIntOrNull() ?: 1
 
                     // Update the list of column names
                     when {
@@ -183,6 +186,7 @@ private fun ScheduleCreateFlow(
                                 }
                             )
                         }
+
                         numColumns < columnNames.size -> {
                             while (columnNames.size > numColumns) {
                                 columnNames.removeLast()
@@ -192,7 +196,7 @@ private fun ScheduleCreateFlow(
                 }
             },
             label = { Text("Number of Columns") },
-            isError = showError && columns.isBlank(),
+            isError = showError && (columns.isBlank() || columns.toIntOrNull() == 0),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
@@ -222,6 +226,7 @@ private fun ScheduleCreateFlow(
                                 columnNames[index] = newName
                             }
                         },
+                        isError = showError && columnNames.getOrNull(index)?.isBlank() == true,
                         label = { Text("Column ${index + 1}") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -238,30 +243,42 @@ private fun ScheduleCreateFlow(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (showError) {
+                val text = if (!isUniqueName(name)) {
+                    "Документ с това име вече съществува"
+                } else if (columns.toIntOrNull() == 0) {
+                    "Моля, въведете валиден брой колони (поне 1)"
+                } else {
+                    "Моля, попълнете всички полета"
+                }
+                Text(
+                    text,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = {
-                    if (name.isBlank() || columns.isBlank()) {
-                        showError = true
-                    } else {
+                    if (!showError) {
                         onConfirm(name, columns, columnNames)
                     }
-                }
+                },
+                enabled = !showError
             ) {
                 Text("Create")
             }
         }
 
-        if (showError) {
-            Text(
-                "Please fill all fields",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp)
+        showError =
+            name.isBlank() || columns.isBlank() || columnNames.any { it.isBlank() } || columns.toIntOrNull() == 0 || !isUniqueName(
+                name
             )
-        }
+
+
     }
 }

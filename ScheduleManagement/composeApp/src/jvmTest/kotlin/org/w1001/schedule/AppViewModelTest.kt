@@ -54,7 +54,7 @@ class AppViewModelTest {
 
         assertTrue(viewModel.isDocumentLoaded)
         assertEquals(document.id, viewModel.currentDocumentId)
-        assertEquals(document.name, viewModel.loadedDocumentName)
+        assertEquals(document.name, (viewModel.documentState.value as DocumentState.ScheduleState).documentName.value)
         assertEquals(DocumentType.Schedule1, viewModel.currentDocumentType)
     }
 
@@ -75,28 +75,51 @@ class AppViewModelTest {
 
         assertFalse(viewModel.isDocumentLoaded)
         assertNull(viewModel.currentDocumentId)
-        assertNull(viewModel.loadedDocumentName)
+        assertTrue(viewModel.documentState.value is DocumentState.Empty)
         assertNull(viewModel.currentDocumentType)
         assertTrue(viewModel.documentState.value is DocumentState.Empty)
     }
 
     @Test
-    fun `test save document without loading first`() {
+    fun `test save new document`() {
         viewModel.createNewSchedule("3", SnapshotStateList(), "New Doc", true)
-        
+
         assertFalse(viewModel.isDocumentLoaded)
         assertNull(viewModel.currentDocumentId)
 
         viewModel.currentDatabase = "test_db"
         viewModel.currentCollection = "test_collection"
-        
+
         runBlocking {
             viewModel.saveDocument()
         }
-        
+
         assertTrue(viewModel.isDocumentLoaded)
         assertNotNull(viewModel.currentDocumentId)
-        assertEquals("New Doc", viewModel.loadedDocumentName)
+        assertEquals("New Doc", (viewModel.documentState.value as DocumentState.ScheduleState).documentName.value)
+
+        var result: Boolean = false
+        runBlocking {
+            result = viewModel.repository.deleteDocumentByName("test_db", "test_collection", "New Doc")
+        }
+        assertTrue(result)
+    }
+
+    @Test
+    fun `test delete document`() {
+        viewModel.createNewSchedule("3", SnapshotStateList(), "DocToDelete", true)
+        viewModel.currentDatabase = "test_db"
+        viewModel.currentCollection = "test_collection"
+
+        runBlocking {
+            viewModel.saveDocument()
+        }
+
+        var result: Boolean = false
+        runBlocking {
+            result = viewModel.repository.deleteDocumentByName("test_db", "test_collection", "DocToDelete")
+        }
+        assertTrue(result)
     }
 
     @Test

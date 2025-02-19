@@ -17,12 +17,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateCollectionDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String) -> Unit
+    onConfirm: (name: String) -> Unit,
+    isUniqueName: (String) -> Boolean
 ) {
     var collectionName by remember { mutableStateOf("") }
 
     val scale = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
+
+    var showError by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         scale.animateTo(
@@ -54,7 +57,7 @@ fun CreateCollectionDialog(
                     scaleX = scale.value
                     scaleY = scale.value
                     alpha = scale.value
-                }.width(400.dp),
+                }.width(600.dp),
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp
@@ -74,7 +77,8 @@ fun CreateCollectionDialog(
                     onValueChange = { collectionName = it },
                     label = { Text("Име на колекция") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = showError
                 )
 
                 Row(
@@ -82,19 +86,34 @@ fun CreateCollectionDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (showError) {
+                        val text = if (!isUniqueName(collectionName)) {
+                            "Колеция с това име вече съществува"
+                        }else {
+                            "Моля, попълнете всички полета"
+                        }
+                        Text(
+                            text,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                     TextButton(onClick = { dismiss(onDismiss) }) {
                         Text("Отказ")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { onConfirm(collectionName) },
+                        onClick = { if (!showError) onConfirm(collectionName) },
 //                        onClick = { dismiss { onConfirm(collectionName, selectedType) } },
-                        enabled = collectionName.isNotBlank()
+                        enabled = !showError
                     ) {
                         Text("Създай")
                     }
                 }
             }
         }
+
+        if (collectionName.isBlank() || !isUniqueName(collectionName)) showError = true else showError = false
     }
 }

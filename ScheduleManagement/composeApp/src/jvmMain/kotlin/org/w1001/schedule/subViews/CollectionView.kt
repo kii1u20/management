@@ -25,6 +25,8 @@ fun CollectionView(
     onCollectionSelected: (String) -> Unit
 ) {
     var collections by remember { mutableStateOf<List<String>>(emptyList()) }
+    var collectionNames by remember { mutableStateOf(HashSet<String>()) }
+
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -39,6 +41,7 @@ fun CollectionView(
     LaunchedEffect(place) {
         try {
             collections = repository.getCollectionNames(place)
+            collectionNames = collections.mapTo(HashSet()) { it }
             viewModel.currentDatabase = place
             viewModel.currentCollection = ""
             viewModel.clearDocumentState()
@@ -87,9 +90,11 @@ fun CollectionView(
                     // If creation was successful, refresh the collections list
                     if (success) {
                         collections = repository.getCollectionNames(place)
+                        collectionNames = collections.mapTo(HashSet()) { it }
                     }
                 }
-            }
+            },
+            isUniqueName = { name -> !collectionNames.contains(name) }
         )
     }
 
@@ -107,6 +112,7 @@ fun CollectionView(
                 isSuccess = success
                 if (success) {
                     collections = repository.getCollectionNames(place)
+                    collectionNames = collections.mapTo(HashSet()) { it }
                 }
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
@@ -162,6 +168,7 @@ fun CollectionView(
                                     isLoading = true
                                     try {
                                         collections = repository.getCollectionNames(place)
+                                        collectionNames = collections.mapTo(HashSet()) { it }
                                         viewModel.currentDatabase = place
                                         viewModel.currentCollection = ""
                                         viewModel.clearDocumentState()

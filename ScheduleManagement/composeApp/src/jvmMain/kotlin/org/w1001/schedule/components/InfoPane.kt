@@ -1,12 +1,14 @@
 package org.w1001.schedule.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -17,7 +19,7 @@ fun InfoPane(
     modifier: Modifier = Modifier, cellSize: MutableState<DpSize>, onSave: () -> Unit,
     viewModel: AppViewModel
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.background(Color.Red)) {
         Text("Info Pane", textAlign = TextAlign.Center)
         Button(onClick = {
             cellSize.value = DpSize(

@@ -3,6 +3,8 @@ package org.w1001.schedule.database
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoWriteException
+import com.mongodb.client.model.IndexOptions
+import com.mongodb.client.model.Indexes
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -40,11 +42,11 @@ class SpreadsheetRepository {
     private val client = MongoClient.create(settings)
     //----------------------------------- With custom timeouts -----------------------------------
 
-//    private suspend fun ensureUniqueNameIndex(databaseName: String, collectionName: String) {
-//        val database = client.getDatabase(databaseName)
-//        val collection = database.getCollection<SpreadsheetDocument>(collectionName)
-//        collection.createIndex(Indexes.ascending("name"), IndexOptions().unique(true))
-//    }
+    private suspend fun createUniqueNameIndex(databaseName: String, collectionName: String) {
+        val database = client.getDatabase(databaseName)
+        val collection = database.getCollection<SpreadsheetDocument>(collectionName)
+        collection.createIndex(Indexes.ascending("name"), IndexOptions().unique(true))
+    }
 
     suspend fun saveSpreadsheet(
         type: String,
@@ -170,6 +172,7 @@ class SpreadsheetRepository {
             }
 
             database.createCollection(collectionName)
+            createUniqueNameIndex(databaseName, collectionName)
             true
         } catch (e: Exception) {
             logger.error { e.stackTraceToString() }
