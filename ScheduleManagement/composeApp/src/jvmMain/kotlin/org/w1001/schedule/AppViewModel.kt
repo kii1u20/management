@@ -116,6 +116,7 @@ class AppViewModel {
         }.toMutableStateList()
     }
 
+    //Can be a second hashmap of rowIndex to MutableSate<Int> if needed
     private fun createCalcBindings(columns: Int): HashMap<Int, MutableList<MutableState<Int>>> {
         return hashMapOf<Int, MutableList<MutableState<Int>>>().apply {
             for (group in 0 until columns) {

@@ -3,6 +3,7 @@ package org.w1001.schedule.mainViews
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.mongodb.MongoSocketException
@@ -139,67 +141,71 @@ private fun ScheduleRow(
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
     viewModel: AppViewModel
 ) {
-    Row(
-        Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Spacer(modifier = Modifier.width(10.dp))
-        val groupSize = if (workTime == 1) 2 else 4
+    val groupSize = if (workTime == 1) 2 else 4
+    LazyRow(Modifier.width(calculateRowWidth(workTime, cells))) {
+        item { Spacer(modifier = Modifier.width(10.dp)) }
 
-        for (group in 0 until columns) {
+        items(columns) { group ->
             val groupCells = (0 until groupSize).map { idx -> cells[rowIndex][group * groupSize + idx] }
-            val specialValue =
-                groupCells.firstOrNull { viewModel.specialMergeSet.contains(it.content.value) }?.content?.value
+            val specialValue = groupCells.firstOrNull { viewModel.specialMergeSet.contains(it.content.value) }
+                ?.content?.value
 
             if (specialValue != null) {
-                val size = if (workTime == 1) {
-                    cellSize.value.width * groupSize
-                } else {
-                    cellSize.value.width * groupSize + 5.dp
-                }
-                RightClickMenu(
-                    cellDataGroup = groupCells,
-                    onRightClick = {
-                        onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1))
-                    }
-                ) {
-                    mergedCell(
-                        cellDataList = groupCells,
-                        isSelected = selectedCell == Pair(rowIndex, group * groupSize + groupSize - 1),
-                        onClick = { onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1)) },
-                        modifier = Modifier.size(size, cellSize.value.height),
-                        value = specialValue
-                    )
-                }
-            } else {
-                groupCells.forEachIndexed { idx, cell ->
+//                item {
                     RightClickMenu(
                         cellDataGroup = groupCells,
                         onRightClick = {
                             onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1))
                         }
                     ) {
-                        spreadsheetCell(
-                            cellData = cell,
-                            isSelected = selectedCell == Pair(rowIndex, group * groupSize + idx),
-                            onClick = { onCellSelected(Pair(rowIndex, group * groupSize + idx)) },
-                            enabled = true,
-                            modifier = Modifier.size(cellSize.value)
-//                                .recomposeHighlighter()
+                        mergedCell(
+                            cellDataList = groupCells,
+                            isSelected = selectedCell == Pair(rowIndex, group * groupSize + groupSize - 1),
+                            onClick = { onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1)) },
+                            modifier = Modifier.size(
+                                if (workTime == 1) cellSize.value.width * groupSize
+                                else cellSize.value.width * groupSize + 5.dp,
+                                cellSize.value.height
+                            ),
+                            value = specialValue
                         )
                     }
-
+//                }
+            } else {
+                for (idx in groupCells.indices) {
+//                    item(key = group * groupSize + idx) {
+                        RightClickMenu(
+                            cellDataGroup = groupCells,
+                            onRightClick = {
+                                onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1))
+                            }
+                        ) {
+                            spreadsheetCell(
+                                cellData = groupCells[idx],
+                                isSelected = selectedCell == Pair(rowIndex, group * groupSize + idx),
+                                onClick = { onCellSelected(Pair(rowIndex, group * groupSize + idx)) },
+                                enabled = true,
+                                modifier = Modifier.size(cellSize.value).recomposeHighlighter()
+                            )
+                        }
+//                    }
                     if (workTime == 2 && idx == groupSize / 2 - 1) {
-                        Spacer(modifier = Modifier.width(5.dp))
+                         Spacer(modifier = Modifier.width(5.dp))
                     }
                 }
             }
 
-            createCalculationColumn(calcCellBindings, group, rowIndex, cells, workTime, groupSize)
+//            item {
+                createCalculationColumn(calcCellBindings, group, rowIndex, cells, workTime, groupSize)
+//            }
 
             if (group < columns - 1) {
-                Spacer(modifier = Modifier.width(10.dp))
+                 Spacer(modifier = Modifier.width(10.dp))
             }
+        }
+
+        for (group in 0 until columns) {
+
         }
     }
 }
@@ -259,6 +265,31 @@ fun createCalculationColumn(
             cells = cells,
             resultBinding = calcBinding
         )
+    }
+}
+
+fun calculateRowWidth(workTime: Int, cells: List<List<CellData>>): Dp {
+    val cellsInRow = cells[0].size
+    val columns = if (workTime == 1) cellsInRow / 2 else cellsInRow / 4
+
+    return with(cellSize.value) {
+        // Base width from all regular cells
+        val baseCellsWidth = width * cellsInRow
+
+        // Width from calculation columns (one per group)
+        val calcColumnsWidth = width * columns
+
+        // Initial spacer (10.dp) + spacing between groups (10.dp per group except last)
+        val groupSpacersWidth = 10.dp + (10.dp * (columns - 1))
+
+        // Extra 5.dp spacers in workTime == 2 (one per group)
+        val extraSpacersWidth = if (workTime == 2) {
+            5.dp * columns
+        } else {
+            0.dp
+        }
+
+        baseCellsWidth + calcColumnsWidth + groupSpacersWidth + extraSpacersWidth
     }
 }
 
