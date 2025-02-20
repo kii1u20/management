@@ -141,12 +141,14 @@ private fun ScheduleRow(
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
     viewModel: AppViewModel
 ) {
-    val groupSize = if (workTime == 1) 2 else 4
+    val groupSize = remember { if (workTime == 1) 2 else 4 }
     LazyRow(Modifier.width(calculateRowWidth(workTime, cells))) {
         item { Spacer(modifier = Modifier.width(10.dp)) }
 
-        items(columns) { group ->
-            val groupCells = (0 until groupSize).map { idx -> cells[rowIndex][group * groupSize + idx] }
+        items(columns,key = { group -> group }) { group ->
+            val groupCells = remember(cells[rowIndex], group, groupSize) {
+                (0 until groupSize).map { idx -> cells[rowIndex][group * groupSize + idx] }
+            }
             val specialValue = groupCells.firstOrNull { viewModel.specialMergeSet.contains(it.content.value) }
                 ?.content?.value
 
@@ -186,7 +188,7 @@ private fun ScheduleRow(
                                 onClick = { onCellSelected(Pair(rowIndex, group * groupSize + idx)) },
                                 enabled = true,
                                 modifier = Modifier.size(cellSize.value)
-//                                    .recomposeHighlighter()
+                                    .recomposeHighlighter()
                             )
                         }
 //                    }
@@ -203,10 +205,6 @@ private fun ScheduleRow(
             if (group < columns - 1) {
                  Spacer(modifier = Modifier.width(10.dp))
             }
-        }
-
-        for (group in 0 until columns) {
-
         }
     }
 }
