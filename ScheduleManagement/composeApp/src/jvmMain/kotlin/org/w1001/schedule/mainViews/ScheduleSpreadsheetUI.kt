@@ -30,6 +30,7 @@ import org.w1001.schedule.database.SpreadsheetRepository
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
 
 private val logger = KotlinLogging.logger("ScheduleSpreadsheetUI.kt")
+
 @Composable
 fun ScheduleSpreadsheetUI(
     viewModel: AppViewModel
@@ -46,6 +47,7 @@ fun ScheduleSpreadsheetUI(
 
     val docState = viewModel.documentState.value as DocumentState.ScheduleState
 
+    var previouslySelectedCell by remember { mutableStateOf<CellData?>(null) }
 
     MaterialTheme {
         if (viewModel.isSaving) {
@@ -76,7 +78,8 @@ fun ScheduleSpreadsheetUI(
 
                 Row(modifier = Modifier.fillMaxSize()) {
                     Column(
-                        Modifier.verticalScroll(verticalScrollState).width(cellSize.value.width), // Make the column scrollable
+                        Modifier.verticalScroll(verticalScrollState)
+                            .width(cellSize.value.width), // Make the column scrollable
                         horizontalAlignment = Alignment.Start
                     ) {
                         for (i in docState.cells.indices) {
@@ -95,8 +98,14 @@ fun ScheduleSpreadsheetUI(
                                     cells = docState.cells,
                                     columns = docState.numberOfColumns.value.toInt(),
                                     workTime = docState.workTime.value,
-                                    selectedCell = selectedCell,
-                                    onCellSelected = { selectedCell = it },
+                                    onCellSelected = {
+                                        println(it.hashCode())
+                                        if (previouslySelectedCell?.equals(it) == true) return@ScheduleRow
+                                        previouslySelectedCell?.isSelected?.value = false
+                                        it.isSelected.value = true
+                                        previouslySelectedCell = it
+//                                        selectedCell = it
+                                    },
                                     calcCellBindings = docState.calcCellBindings,
                                     viewModel = viewModel
                                 )
@@ -136,8 +145,7 @@ private fun ScheduleRow(
     cells: List<List<CellData>>,
     columns: Int,
     workTime: Int,
-    selectedCell: Pair<Int, Int>?,
-    onCellSelected: (Pair<Int, Int>) -> Unit,
+    onCellSelected: (CellData) -> Unit,
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
     viewModel: AppViewModel
 ) {
@@ -145,7 +153,7 @@ private fun ScheduleRow(
     LazyRow(Modifier.width(calculateRowWidth(workTime, cells))) {
         item { Spacer(modifier = Modifier.width(10.dp)) }
 
-        items(columns,key = { group -> group }) { group ->
+        items(columns, key = { group -> "$rowIndex-$group" }) { group ->
             val groupCells = remember(cells[rowIndex], group, groupSize) {
                 (0 until groupSize).map { idx -> cells[rowIndex][group * groupSize + idx] }
             }
@@ -153,57 +161,55 @@ private fun ScheduleRow(
                 ?.content?.value
 
             if (specialValue != null) {
-//                item {
-                    RightClickMenu(
-                        cellDataGroup = groupCells,
-                        onRightClick = {
-                            onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1))
-                        }
-                    ) {
-                        mergedCell(
-                            cellDataList = groupCells,
-                            isSelected = selectedCell == Pair(rowIndex, group * groupSize + groupSize - 1),
-                            onClick = { onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1)) },
-                            modifier = Modifier.size(
-                                if (workTime == 1) cellSize.value.width * groupSize
-                                else cellSize.value.width * groupSize + 5.dp,
-                                cellSize.value.height
-                            ),
-                            value = specialValue
-                        )
+                RightClickMenu(
+                    cellDataGroup = groupCells,
+                    onRightClick = {
+                        onCellSelected(groupCells.last())
                     }
-//                }
+                ) {
+                    mergedCell(
+                        cellDataList = groupCells,
+                        isSelected = groupCells.last().isSelected.value,
+                        onClick = { onCellSelected(groupCells.last()) },
+                        modifier = Modifier.size(
+                            if (workTime == 1) cellSize.value.width * groupSize
+                            else cellSize.value.width * groupSize + 5.dp,
+                            cellSize.value.height
+                        ),
+                        value = specialValue
+                    )
+                }
             } else {
                 for (idx in groupCells.indices) {
-//                    item(key = group * groupSize + idx) {
+                    val cellData = groupCells[idx]
+                    key(cellData) {
                         RightClickMenu(
                             cellDataGroup = groupCells,
                             onRightClick = {
-                                onCellSelected(Pair(rowIndex, group * groupSize + groupSize - 1))
+                                onCellSelected(groupCells.last())
                             }
                         ) {
                             spreadsheetCell(
-                                cellData = groupCells[idx],
-                                isSelected = selectedCell == Pair(rowIndex, group * groupSize + idx),
-                                onClick = { onCellSelected(Pair(rowIndex, group * groupSize + idx)) },
+                                cellData = cellData,
+                                isSelected = cellData.isSelected.value,
+                                onClick = { onCellSelected(cellData) },
                                 enabled = true,
                                 modifier = Modifier.size(cellSize.value)
                                     .recomposeHighlighter()
                             )
                         }
-//                    }
+                    }
+
                     if (workTime == 2 && idx == groupSize / 2 - 1) {
-                         Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                     }
                 }
             }
 
-//            item {
-                createCalculationColumn(calcCellBindings, group, rowIndex, cells, workTime, groupSize)
-//            }
+            createCalculationColumn(calcCellBindings, group, rowIndex, cells, workTime, groupSize)
 
             if (group < columns - 1) {
-                 Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(10.dp))
             }
         }
     }

@@ -43,10 +43,18 @@ fun spreadsheetCell(
     }
     val source = remember { MutableInteractionSource() }
     val textFieldRef = remember { FocusRequester() }
+    val isPressed = source.collectIsPressedAsState().value
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            onClick()
+            textFieldRef.requestFocus()
+        }
+    }
 
     LaunchedEffect(isSelected) {
         if (isSelected) {
-            textFieldRef.requestFocus()
+//            textFieldRef.requestFocus()
         }
     }
 
@@ -86,9 +94,9 @@ fun spreadsheetCell(
             }
         )
 
-        if (source.collectIsPressedAsState().value) {
-            onClick()
-//            textFieldRef.requestFocus()
-        }
+//        if (source.collectIsPressedAsState().value) {
+//            onClick()
+////            textFieldRef.requestFocus()
+//        }
     }
 }
