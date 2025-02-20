@@ -195,7 +195,7 @@ private fun ScheduleRow(
                                 onClick = { onCellSelected(cellData) },
                                 enabled = true,
                                 modifier = Modifier.size(cellSize.value)
-                                    .recomposeHighlighter()
+//                                    .recomposeHighlighter()
                             )
                         }
                     }

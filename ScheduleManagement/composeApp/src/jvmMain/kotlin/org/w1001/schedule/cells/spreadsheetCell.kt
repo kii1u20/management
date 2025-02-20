@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
@@ -47,14 +48,7 @@ fun spreadsheetCell(
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            onClick()
             textFieldRef.requestFocus()
-        }
-    }
-
-    LaunchedEffect(isSelected) {
-        if (isSelected) {
-//            textFieldRef.requestFocus()
         }
     }
 
@@ -76,7 +70,11 @@ fun spreadsheetCell(
             },
             enabled = enabled,
             interactionSource = source,
-            modifier = Modifier.fillMaxSize().focusRequester(textFieldRef),
+            modifier = Modifier.fillMaxSize().focusRequester(textFieldRef).onFocusChanged { focusState ->
+                if (focusState.isFocused) {
+                    onClick()
+                }
+            },
             textStyle = MaterialTheme.typography.body1.copy(
                 color = textColor,
                 textAlign = TextAlign.Center,
