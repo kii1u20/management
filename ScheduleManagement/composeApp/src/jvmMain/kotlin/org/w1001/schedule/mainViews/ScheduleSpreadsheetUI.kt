@@ -19,13 +19,11 @@ import com.mongodb.MongoSocketException
 import com.mongodb.MongoTimeoutException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
-import org.bson.types.ObjectId
 import org.w1001.schedule.*
 import org.w1001.schedule.cells.calcCell
 import org.w1001.schedule.cells.mergedCell
 import org.w1001.schedule.cells.spreadsheetCell
 import org.w1001.schedule.components.*
-import org.w1001.schedule.database.SpreadsheetRepository
 
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
 
@@ -35,19 +33,17 @@ private val logger = KotlinLogging.logger("ScheduleSpreadsheetUI.kt")
 fun ScheduleSpreadsheetUI(
     viewModel: AppViewModel
 ) {
-    var selectedCell by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     val focusManager = LocalFocusManager.current
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
     val scope = rememberCoroutineScope()
-    val repository = remember { SpreadsheetRepository() }
-    var currentDocumentId by remember { mutableStateOf<ObjectId?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val docState = viewModel.documentState.value as DocumentState.ScheduleState
 
     var previouslySelectedCell by remember { mutableStateOf<CellData?>(null) }
+    var previouslySelectedRow by remember { mutableStateOf<CellData?>(null) }
 
     MaterialTheme {
         if (viewModel.isSaving) {
@@ -64,7 +60,11 @@ fun ScheduleSpreadsheetUI(
         Row(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
             detectTapGestures(onTap = {
                 focusManager.clearFocus()
-                selectedCell = null
+                previouslySelectedCell?.isSelected?.value = false
+                previouslySelectedCell = null
+
+                previouslySelectedRow?.isSelected?.value = false
+                previouslySelectedRow = null
             })
         }) {
             Column(Modifier.weight(0.8f)) {
@@ -83,7 +83,7 @@ fun ScheduleSpreadsheetUI(
                         horizontalAlignment = Alignment.Start
                     ) {
                         for (i in docState.cells.indices) {
-                            createDayCell(i, selectedCell)
+                            createDayCell(docState.dayCellsData[i])
                         }
                     }
                     Column( //NOT FILING MAX SIZE OF ROW
@@ -99,12 +99,15 @@ fun ScheduleSpreadsheetUI(
                                     columns = docState.numberOfColumns.value.toInt(),
                                     workTime = docState.workTime.value,
                                     onCellSelected = {
-                                        println(it.hashCode())
                                         if (previouslySelectedCell?.equals(it) == true) return@ScheduleRow
                                         previouslySelectedCell?.isSelected?.value = false
                                         it.isSelected.value = true
                                         previouslySelectedCell = it
-//                                        selectedCell = it
+
+                                        println(it.hashCode())
+                                        previouslySelectedRow?.isSelected?.value = false
+                                        docState.dayCellsData[i].isSelected.value = true
+                                        previouslySelectedRow = docState.dayCellsData[i]
                                     },
                                     calcCellBindings = docState.calcCellBindings,
                                     viewModel = viewModel
@@ -161,24 +164,27 @@ private fun ScheduleRow(
                 ?.content?.value
 
             if (specialValue != null) {
-                RightClickMenu(
-                    cellDataGroup = groupCells,
-                    onRightClick = {
-                        onCellSelected(groupCells.last())
+                key(groupCells) {
+                    RightClickMenu(
+                        cellDataGroup = groupCells,
+                        onRightClick = {
+                            onCellSelected(groupCells.last())
+                        }
+                    ) {
+                        mergedCell(
+                            cellDataList = groupCells,
+                            isSelected = groupCells.last().isSelected.value,
+                            onClick = { onCellSelected(groupCells.last()) },
+                            modifier = Modifier.size(
+                                if (workTime == 1) cellSize.value.width * groupSize
+                                else cellSize.value.width * groupSize + 5.dp,
+                                cellSize.value.height
+                            ),
+                            value = specialValue
+                        )
                     }
-                ) {
-                    mergedCell(
-                        cellDataList = groupCells,
-                        isSelected = groupCells.last().isSelected.value,
-                        onClick = { onCellSelected(groupCells.last()) },
-                        modifier = Modifier.size(
-                            if (workTime == 1) cellSize.value.width * groupSize
-                            else cellSize.value.width * groupSize + 5.dp,
-                            cellSize.value.height
-                        ),
-                        value = specialValue
-                    )
                 }
+
             } else {
                 for (idx in groupCells.indices) {
                     val cellData = groupCells[idx]
@@ -206,7 +212,7 @@ private fun ScheduleRow(
                 }
             }
 
-            createCalculationColumn(calcCellBindings, group, rowIndex, cells, workTime, groupSize)
+            createCalcCell(calcCellBindings, group, rowIndex, cells, workTime, groupSize)
 
             if (group < columns - 1) {
                 Spacer(modifier = Modifier.width(10.dp))
@@ -216,10 +222,10 @@ private fun ScheduleRow(
 }
 
 @Composable
-fun createDayCell(row: Int, selectedCell: Pair<Int, Int>?) {
+fun createDayCell(cellData: CellData) {
     spreadsheetCell(
-        cellData = CellData(mutableStateOf("${row + 1}")),
-        isSelected = if ((selectedCell?.first ?: false) == row) true else false,
+        cellData = cellData,
+        isSelected = cellData.isSelected.value,
         onClick = {},
         enabled = false,
         modifier = Modifier.size(cellSize.value),
@@ -227,7 +233,7 @@ fun createDayCell(row: Int, selectedCell: Pair<Int, Int>?) {
 }
 
 @Composable
-fun createCalculationColumn(
+fun createCalcCell(
     calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
     group: Int,
     i: Int,
@@ -273,6 +279,8 @@ fun createCalculationColumn(
     }
 }
 
+// Needed for the LazyRow, since the parent column is horizontally scrollable too,
+// and throws an exception without defined size
 fun calculateRowWidth(workTime: Int, cells: List<List<CellData>>): Dp {
     val cellsInRow = cells[0].size
     val columns = if (workTime == 1) cellsInRow / 2 else cellsInRow / 4

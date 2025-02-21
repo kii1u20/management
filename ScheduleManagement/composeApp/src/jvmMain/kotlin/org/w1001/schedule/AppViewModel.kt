@@ -57,6 +57,7 @@ class AppViewModel {
             },
             workTime = if (isSchedule1) mutableStateOf(1) else mutableStateOf(2),
             cells = createScheduleCells(columns.toInt(), isSchedule1),
+            dayCellsData = createDayCellsData(),
             calcCellBindings = createCalcBindings(columns.toInt())
         )
 
@@ -92,6 +93,7 @@ class AppViewModel {
             cells = document.cells.map { row ->
                 row.map { CellData(mutableStateOf(it)) }.toMutableStateList()
             }.toMutableStateList(),
+            dayCellsData = createDayCellsData(),
             calcCellBindings = createCalcBindings(columns.toInt())
         )
 
@@ -114,6 +116,12 @@ class AppViewModel {
                 CellData(mutableStateOf(""))
             }.toMutableStateList()
         }.toMutableStateList()
+    }
+
+    private fun createDayCellsData(): List<CellData> {
+        return List(31) { row ->
+            CellData(mutableStateOf("${row + 1}"))
+        }
     }
 
     //Can be a second hashmap of rowIndex to MutableSate<Int> if needed
