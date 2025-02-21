@@ -10,6 +10,7 @@ sealed interface DocumentState {
         val columnNames: SnapshotStateList<MutableState<String>>,
         val workTime: MutableState<Int>,
         val cells: SnapshotStateList<SnapshotStateList<CellData>>,
+        val dayCellsData: List<CellData>,
         val calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
     ) : DocumentState
 

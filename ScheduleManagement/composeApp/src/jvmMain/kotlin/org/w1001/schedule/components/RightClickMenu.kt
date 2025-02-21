@@ -19,39 +19,44 @@ fun RightClickMenu(
     onRightClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    CompositionLocalProvider(
-        LocalTextContextMenu provides object : TextContextMenu {
-            @Composable
-            override fun Area(
-                textManager: TextContextMenu.TextManager, state: ContextMenuState, content: @Composable () -> Unit
-            ) {
-                ContextMenuArea(
-                    items = {
-                        listOf(
-                            ContextMenuItem("Absence") {
-                                onRightClick()
-                                // If an onAbsence callback is provided, call it.
-                                onAbsence?.invoke() ?: run {
-                                    // Default action if not provided.
-                                    println("Absence clicked for text: ${textManager.selectedText}")
-                                    cellDataGroup.last().content.value = "A"
-                                }
-                            },
-                            ContextMenuItem("Break") {
-                                onRightClick()
-                                // If an onAbsence callback is provided, call it.
-                                onBreak?.invoke() ?: run {
-                                    // Default action if not provided.
-                                    println("Break clicked for text: ${textManager.selectedText}")
-                                    cellDataGroup.last().content.value = "B"
-                                }
-                            }
-                        )
-                    },
-                    state = state
-                ) { content() }
+    val menuItems = listOf(
+        ContextMenuItem("Absence") {
+            onRightClick()
+            onAbsence?.invoke() ?: run {
+                cellDataGroup.last().content.value = "A"
             }
         },
-        content = content
+        ContextMenuItem("Break") {
+            onRightClick()
+            onBreak?.invoke() ?: run {
+                cellDataGroup.last().content.value = "B"
+            }
+        }
     )
+
+    // Handle right-click on static content
+    ContextMenuArea(
+        items = { menuItems }
+    ) {
+        // Override TextContextMenu for TextFields to show custom items
+        CompositionLocalProvider(
+            LocalTextContextMenu provides object : TextContextMenu {
+                @Composable
+                override fun Area(
+                    textManager: TextContextMenu.TextManager,
+                    state: ContextMenuState,
+                    content: @Composable () -> Unit
+                ) {
+                    ContextMenuArea(
+                        items = { menuItems },
+                        state = state
+                    ) {
+                        content()
+                    }
+                }
+            }
+        ) {
+            content()
+        }
+    }
 }
