@@ -1,7 +1,6 @@
 package org.w1001.schedule.cells
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicTextField
@@ -41,13 +40,13 @@ fun mergedCell(
 
     val textInteractionSource = remember { MutableInteractionSource() }
     // Detect press on Text and call onClick immediately
-    LaunchedEffect(textInteractionSource) {
-        textInteractionSource.interactions.collect { interaction ->
-            if (interaction is PressInteraction.Press) {
-                onClick() // Trigger selection on press down
-            }
-        }
-    }
+//    LaunchedEffect(textInteractionSource) {
+//        textInteractionSource.interactions.collect { interaction ->
+//            if (interaction is PressInteraction.Press) {
+//                onClick() // Trigger selection on press down
+//            }
+//        }
+//    }
 
     LaunchedEffect(cellDataList) {
         cellDataList.forEach { it.content.value = "" }
@@ -114,10 +113,11 @@ fun mergedCell(
                 modifier = Modifier.fillMaxSize().pointerInput(Unit) {
                     detectTapGestures(
                         onPress = { offset ->
-                            val press = PressInteraction.Press(offset)
-                            textInteractionSource.tryEmit(press)
-                            tryAwaitRelease()
-                            textInteractionSource.tryEmit(PressInteraction.Release(press))
+//                            val press = PressInteraction.Press(offset)
+//                            textInteractionSource.tryEmit(press)
+//                            tryAwaitRelease()
+//                            textInteractionSource.tryEmit(PressInteraction.Release(press))
+                            onClick()
                         }
                     )
                 }
