@@ -178,7 +178,7 @@ private fun ScheduleRow(
     viewModel: AppViewModel
 ) {
     val groupSize = remember { if (workTime == 1) 2 else 4 }
-    LazyRow(Modifier.width(calculateRowWidth(workTime, cells))) {
+    LazyRow(Modifier.width(calculateRowWidth(workTime, cells)), userScrollEnabled = false) {
         item { Spacer(modifier = Modifier.width(10.dp)) }
 
         items(columns, key = { group -> "$rowIndex-$group" }) { group ->
@@ -226,7 +226,7 @@ private fun ScheduleRow(
                                 onClick = { onCellSelected(cellData) },
                                 enabled = true,
                                 modifier = Modifier.size(cellSize.value)
-//                                    .recomposeHighlighter()
+                                    .recomposeHighlighter()
                             )
                         }
                     }
