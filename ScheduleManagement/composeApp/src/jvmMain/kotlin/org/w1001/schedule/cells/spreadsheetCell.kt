@@ -20,7 +20,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.w1001.schedule.CellData
+import org.w1001.schedule.viewModel
 
 @Composable
 fun spreadsheetCell(
@@ -68,7 +70,7 @@ fun spreadsheetCell(
         borderColor = borderColor,
         cornerRadius = cornerRadius
     ) {
-        val fontSize = with(LocalDensity.current) { (maxWidth / 3).toSp() }
+        val fontSize = if(viewModel.enableAutoFontSize.value) {with(LocalDensity.current) { (maxWidth / 3).toSp() }} else { viewModel.fontSize.value.sp }
 
         if (isSelected) {
             BasicTextField(

@@ -30,6 +30,9 @@ class AppViewModel {
     val repository = SpreadsheetRepository()
     val specialMergeSet = hashSetOf("A", "B", "C")
 
+    val fontSize: MutableState<Float> = mutableStateOf(14f)
+    val enableAutoFontSize: MutableState<Boolean> = mutableStateOf(true)
+
     private val logger = KotlinLogging.logger("AppViewModel.kt")
 
     fun clearDocumentState() {

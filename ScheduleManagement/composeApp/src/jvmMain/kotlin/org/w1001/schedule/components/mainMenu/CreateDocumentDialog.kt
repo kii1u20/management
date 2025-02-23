@@ -177,7 +177,10 @@ private fun ScheduleCreateFlow(
                         // Parse the input and clamp it to a minimum of 1
                         columns = it
 
-                        val numColumns = it.toIntOrNull() ?: 1
+                        var numColumns = it.toIntOrNull() ?: 1
+                        if (numColumns > 25) {
+                            numColumns = 25
+                        }
 
                         // Update the list of column names
                         when {
@@ -198,7 +201,7 @@ private fun ScheduleCreateFlow(
                     }
                 },
                 label = { Text("Number of Columns") },
-                isError = showError && (columns.isBlank() || columns.toIntOrNull() == 0),
+                isError = showError && (columns.isBlank() || columns.toIntOrNull() == 0 || columns.toIntOrNull()?.let { it > 25 } == true),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -248,8 +251,8 @@ private fun ScheduleCreateFlow(
                 if (showError) {
                     val text = if (!isUniqueName(name)) {
                         "Документ с това име вече съществува"
-                    } else if (columns.toIntOrNull() == 0) {
-                        "Моля, въведете валиден брой колони (поне 1)"
+                    } else if (columns.toIntOrNull() == 0 || columns.toIntOrNull()?.let { it > 25 } == true) {
+                        "Моля, въведете валиден брой колони\n(поне 1, максимум 25)"
                     } else {
                         "Моля, попълнете всички полета"
                     }
@@ -257,7 +260,7 @@ private fun ScheduleCreateFlow(
                         text,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier
                     )
                 }
                 TextButton(onClick = onDismiss) {
@@ -277,9 +280,8 @@ private fun ScheduleCreateFlow(
             }
 
             showError =
-                name.isBlank() || columns.isBlank() || columnNames.any { it.isBlank() } || columns.toIntOrNull() == 0 || !isUniqueName(
-                    name
-                )
+                name.isBlank() || columns.isBlank() || columnNames.any { it.isBlank() } || columns.toIntOrNull() == 0
+                        || columns.toIntOrNull()?.let { it > 25 } == true || !isUniqueName(name)
 
 
         }

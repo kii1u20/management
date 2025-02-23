@@ -6,10 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Button
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -17,11 +14,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.w1001.schedule.AppViewModel
 import org.w1001.schedule.DocumentState
 import org.w1001.schedule.viewModel
@@ -50,7 +50,10 @@ fun InfoPane(
         )
     }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
         titleBox()
 
         Button(onClick = {
@@ -77,6 +80,66 @@ fun InfoPane(
 
         Button(onClick = onSave) {
             Text("Save")
+        }
+
+//        fontScaler() //mergeCell, calcCell and headingRow are not set up for auto scaling yet
+    }
+}
+
+@Composable
+fun fontScaler() {
+    Surface(
+        modifier = Modifier
+            .padding(8.dp)
+            .shadow(
+                elevation = 2.dp,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Авто размер на шрифт",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = androidx.compose.material.MaterialTheme.typography.body1.copy(
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    lineHeight = 16.sp
+                )
+            )
+
+            Checkbox(
+                checked = viewModel.enableAutoFontSize.value,
+                onCheckedChange = { viewModel.enableAutoFontSize.value = it }
+            )
+        }
+    }
+
+    if(!viewModel.enableAutoFontSize.value) {
+        Column() {
+            Text(
+                "Размер шрифта",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = androidx.compose.material.MaterialTheme.typography.body1.copy(
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    lineHeight = 16.sp
+                )
+            )
+
+            Slider(
+                value = viewModel.fontSize.value,
+                onValueChange = { viewModel.fontSize.value = it },
+                valueRange = 10f..50f
+            )
         }
     }
 }
