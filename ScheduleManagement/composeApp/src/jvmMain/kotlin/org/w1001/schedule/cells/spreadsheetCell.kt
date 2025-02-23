@@ -58,8 +58,11 @@ fun spreadsheetCell(
 //    }
 
     LaunchedEffect(isSelected) {
-        if (isSelected) {
+        if (enabled && isSelected) {
             textFieldRef.requestFocus()
+            textFieldValue = textFieldValue.copy(
+                selection = TextRange(textFieldValue.text.length)
+            )
         }
     }
 
@@ -72,7 +75,7 @@ fun spreadsheetCell(
     ) {
         val fontSize = if(viewModel.enableAutoFontSize.value) {with(LocalDensity.current) { (maxWidth / 3).toSp() }} else { viewModel.fontSize.value.sp }
 
-        if (isSelected) {
+        if (enabled && isSelected) {
             BasicTextField(
                 value = textFieldValue,
                 onValueChange = {
@@ -80,7 +83,6 @@ fun spreadsheetCell(
                     textFieldValue = it.copy(text = newText)
                     cellData.content.value = newText
                 },
-                enabled = enabled,
                 modifier = Modifier.fillMaxSize().focusRequester(textFieldRef),
                 textStyle = MaterialTheme.typography.body1.copy(
                     color = textColor,
