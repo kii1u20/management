@@ -1,11 +1,9 @@
 package org.w1001.schedule.mainViews
 
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,56 +65,83 @@ fun ScheduleSpreadsheetUI(
                 previouslySelectedRow = null
             })
         }) {
-            Column(Modifier.weight(0.8f)) {
-                HeadingRow(
-                    workTime = docState.workTime.value,
-                    columns = docState.numberOfColumns.value.toInt(),
-                    horizontalScrollState = horizontalScrollState,
-                    calcCellBindings = docState.calcCellBindings,
-                    docState = docState
-                )
+            Box(modifier = Modifier.fillMaxSize().weight(0.8f)) {
+                Column(Modifier.padding(end = 12.dp, bottom = 12.dp)) {
+                    HeadingRow(
+                        workTime = docState.workTime.value,
+                        columns = docState.numberOfColumns.value.toInt(),
+                        horizontalScrollState = horizontalScrollState,
+                        calcCellBindings = docState.calcCellBindings,
+                        docState = docState
+                    )
 
-                Row(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        Modifier.verticalScroll(verticalScrollState)
-                            .width(cellSize.value.width), // Make the column scrollable
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        for (i in docState.cells.indices) {
-                            createDayCell(docState.dayCellsData[i])
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                            Modifier.verticalScroll(verticalScrollState)
+                                .width(cellSize.value.width), // Make the column scrollable
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            for (i in docState.cells.indices) {
+                                createDayCell(docState.dayCellsData[i])
+                            }
                         }
-                    }
-                    Column( //NOT FILING MAX SIZE OF ROW
-                        Modifier.verticalScroll(verticalScrollState)
-                            .horizontalScroll(horizontalScrollState).weight(1f), // Make the column scrollable
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        for (i in docState.cells.indices) {
-                            key(i) { // Add key to help with recomposition
-                                ScheduleRow(
-                                    rowIndex = i,
-                                    cells = docState.cells,
-                                    columns = docState.numberOfColumns.value.toInt(),
-                                    workTime = docState.workTime.value,
-                                    onCellSelected = {
-                                        if (previouslySelectedCell?.equals(it) == true) return@ScheduleRow
-                                        previouslySelectedCell?.isSelected?.value = false
-                                        it.isSelected.value = true
-                                        previouslySelectedCell = it
+                        Column(
+                            Modifier.verticalScroll(verticalScrollState)
+                                .horizontalScroll(horizontalScrollState).weight(1f), // Make the column scrollable
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            for (i in docState.cells.indices) {
+                                key(i) { // Add key to help with recomposition
+                                    ScheduleRow(
+                                        rowIndex = i,
+                                        cells = docState.cells,
+                                        columns = docState.numberOfColumns.value.toInt(),
+                                        workTime = docState.workTime.value,
+                                        onCellSelected = {
+                                            if (previouslySelectedCell?.equals(it) == true) return@ScheduleRow
+                                            previouslySelectedCell?.isSelected?.value = false
+                                            it.isSelected.value = true
+                                            previouslySelectedCell = it
 
-                                        println(it.hashCode())
-                                        previouslySelectedRow?.isSelected?.value = false
-                                        docState.dayCellsData[i].isSelected.value = true
-                                        previouslySelectedRow = docState.dayCellsData[i]
-                                    },
-                                    calcCellBindings = docState.calcCellBindings,
-                                    viewModel = viewModel
-                                )
+                                            println(it.hashCode())
+                                            previouslySelectedRow?.isSelected?.value = false
+                                            docState.dayCellsData[i].isSelected.value = true
+                                            previouslySelectedRow = docState.dayCellsData[i]
+                                        },
+                                        calcCellBindings = docState.calcCellBindings,
+                                        viewModel = viewModel
+                                    )
+                                }
                             }
                         }
                     }
                 }
+                if (verticalScrollState.maxValue > 0) {
+                    VerticalScrollbar(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd),
+                        adapter = rememberScrollbarAdapter(verticalScrollState),
+                        style = LocalScrollbarStyle.current.copy(
+                            unhoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f),
+                            hoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.5f),
+                            thickness = 10.dp
+                        )
+                    )
+                }
+                if (horizontalScrollState.maxValue > 0) {
+                    HorizontalScrollbar(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter),
+                        adapter = rememberScrollbarAdapter(horizontalScrollState),
+                        style = LocalScrollbarStyle.current.copy(
+                            unhoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f),
+                            hoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.5f),
+                            thickness = 10.dp
+                        )
+                    )
+                }
             }
+
             InfoPane(
                 cellSize = cellSize,
                 viewModel = viewModel,
