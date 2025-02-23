@@ -4,8 +4,10 @@ package org.w1001.schedule.components.mainMenu
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -156,129 +158,139 @@ private fun ScheduleCreateFlow(
     val columnCount by derivedStateOf {
         columns.toIntOrNull() ?: 1
     }
-
-    Column(modifier = Modifier.verticalScroll(verticalScrollState)) {
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Document Name") },
-            isError = showError && (name.isBlank() || !isUniqueName(name)),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = columns,
-            onValueChange = {
-                if (it.all { char -> char.isDigit() }) {
-                    // Parse the input and clamp it to a minimum of 1
-                    columns = it
-
-                    val numColumns = it.toIntOrNull() ?: 1
-
-                    // Update the list of column names
-                    when {
-                        numColumns > columnNames.size -> {
-                            columnNames.addAll(
-                                List(numColumns - columnNames.size) { idx ->
-                                    "Column ${columnNames.size + idx + 1}"
-                                }
-                            )
-                        }
-
-                        numColumns < columnNames.size -> {
-                            while (columnNames.size > numColumns) {
-                                columnNames.removeLast()
-                            }
-                        }
-                    }
-                }
-            },
-            label = { Text("Number of Columns") },
-            isError = showError && (columns.isBlank() || columns.toIntOrNull() == 0),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        AnimatedContent(
-            targetState = columnCount,
-            transitionSpec = {
-                if (targetState > initialState) {
-                    (fadeIn() + expandVertically(expandFrom = Alignment.Top)) togetherWith
-                            fadeOut()
-                } else {
-                    fadeIn() togetherWith
-                            (fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top))
-                }
-            }
-        ) { count ->
-            // Render text fields for each column
-            Column() {
-                Text("Column Names", style = MaterialTheme.typography.titleMedium)
-                repeat(count) { index ->
-                    OutlinedTextField(
-                        value = columnNames.getOrNull(index) ?: "",
-                        onValueChange = { newName ->
-                            if (index < columnNames.size) {
-                                columnNames[index] = newName
-                            }
-                        },
-                        isError = showError && columnNames.getOrNull(index)?.isBlank() == true,
-                        label = { Text("Column ${index + 1}") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (showError) {
-                val text = if (!isUniqueName(name)) {
-                    "Документ с това име вече съществува"
-                } else if (columns.toIntOrNull() == 0) {
-                    "Моля, въведете валиден брой колони (поне 1)"
-                } else {
-                    "Моля, попълнете всички полета"
-                }
-                Text(
-                    text,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = {
-                    if (!showError) {
-                        onConfirm(name, columns, columnNames)
-                    }
-                },
-                enabled = !showError
-            ) {
-                Text("Create")
-            }
-        }
-
-        showError =
-            name.isBlank() || columns.isBlank() || columnNames.any { it.isBlank() } || columns.toIntOrNull() == 0 || !isUniqueName(
-                name
+    Box() {
+        Column(modifier = Modifier.verticalScroll(verticalScrollState).padding(12.dp)) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Document Name") },
+                isError = showError && (name.isBlank() || !isUniqueName(name)),
+                modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = columns,
+                onValueChange = {
+                    if (it.all { char -> char.isDigit() }) {
+                        // Parse the input and clamp it to a minimum of 1
+                        columns = it
+
+                        val numColumns = it.toIntOrNull() ?: 1
+
+                        // Update the list of column names
+                        when {
+                            numColumns > columnNames.size -> {
+                                columnNames.addAll(
+                                    List(numColumns - columnNames.size) { idx ->
+                                        "Column ${columnNames.size + idx + 1}"
+                                    }
+                                )
+                            }
+
+                            numColumns < columnNames.size -> {
+                                while (columnNames.size > numColumns) {
+                                    columnNames.removeLast()
+                                }
+                            }
+                        }
+                    }
+                },
+                label = { Text("Number of Columns") },
+                isError = showError && (columns.isBlank() || columns.toIntOrNull() == 0),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AnimatedContent(
+                targetState = columnCount,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        (fadeIn() + expandVertically(expandFrom = Alignment.Top)) togetherWith
+                                fadeOut()
+                    } else {
+                        fadeIn() togetherWith
+                                (fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top))
+                    }
+                }
+            ) { count ->
+                // Render text fields for each column
+                Column() {
+                    Text("Column Names", style = MaterialTheme.typography.titleMedium)
+                    repeat(count) { index ->
+                        OutlinedTextField(
+                            value = columnNames.getOrNull(index) ?: "",
+                            onValueChange = { newName ->
+                                if (index < columnNames.size) {
+                                    columnNames[index] = newName
+                                }
+                            },
+                            isError = showError && columnNames.getOrNull(index)?.isBlank() == true,
+                            label = { Text("Column ${index + 1}") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showError) {
+                    val text = if (!isUniqueName(name)) {
+                        "Документ с това име вече съществува"
+                    } else if (columns.toIntOrNull() == 0) {
+                        "Моля, въведете валиден брой колони (поне 1)"
+                    } else {
+                        "Моля, попълнете всички полета"
+                    }
+                    Text(
+                        text,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        if (!showError) {
+                            onConfirm(name, columns, columnNames)
+                        }
+                    },
+                    enabled = !showError
+                ) {
+                    Text("Create")
+                }
+            }
+
+            showError =
+                name.isBlank() || columns.isBlank() || columnNames.any { it.isBlank() } || columns.toIntOrNull() == 0 || !isUniqueName(
+                    name
+                )
+
+
+        }
+
+        if (verticalScrollState.maxValue > 0) {
+            VerticalScrollbar(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd),
+                adapter = rememberScrollbarAdapter(verticalScrollState)
+            )
+        }
 
     }
 }
