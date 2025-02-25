@@ -107,10 +107,14 @@ class SpreadsheetRepository {
             name = name
         )
 
-        collection.replaceOne(
+        val result = collection.replaceOne(
             filter = org.bson.Document("_id", id),
             replacement = updatedDocument
         )
+
+        if (result.matchedCount == 0L) {
+            throw IllegalStateException("Document with id '$id' not found")
+        }
     }
 
     suspend fun loadDocuments(databaseName: String, collectionName: String): List<SpreadsheetDocument> {

@@ -2,6 +2,7 @@ package org.w1001.schedule
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import java.math.BigDecimal
 
 sealed interface DocumentState {
     data class ScheduleState(
@@ -11,7 +12,7 @@ sealed interface DocumentState {
         val workTime: MutableState<Int>,
         val cells: SnapshotStateList<SnapshotStateList<CellData>>,
         val dayCellsData: List<CellData>,
-        val calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>
+        val calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>
     ) : DocumentState
 
     object Empty : DocumentState

@@ -122,4 +122,150 @@ class SpreadsheetRepositoryTest {
         val secondAttempt = repository.createCollection(testDatabase, newCollection)
         assertFalse(secondAttempt)
     }
+
+    @Test
+    fun `test save document with empty cells`() = runBlocking {
+        val cells = List(31) { List(4) { CellData(mutableStateOf("")) } }
+        val docName = "Empty Cells Test ${System.currentTimeMillis()}"
+        val id = repository.saveSpreadsheet(
+            type = "schedule1",
+            columnNames = listOf("Col1"),
+            cells = cells,
+            name = docName,
+            databaseName = testDatabase,
+            collectionName = testCollection
+        )
+        val loadedDoc = repository.loadDocument(id, testDatabase, testCollection)
+        assertNotNull(loadedDoc)
+        assertEquals("", loadedDoc.cells[0][0])
+    }
+
+    @Test
+    fun `test save document with special characters in name`() = runBlocking {
+        val cells = List(31) { List(4) { CellData(mutableStateOf("")) } }
+        val docName = "Special @#$%^&* ${System.currentTimeMillis()}"
+        val id = repository.saveSpreadsheet(
+            type = "schedule1",
+            columnNames = listOf("Col1"),
+            cells = cells,
+            name = docName,
+            databaseName = testDatabase,
+            collectionName = testCollection
+        )
+        val loadedDoc = repository.loadDocument(id, testDatabase, testCollection)
+        assertNotNull(loadedDoc)
+        assertEquals(docName, loadedDoc.name)
+    }
+
+    @Test
+    fun `test update non-existent document`(): Unit = runBlocking {
+        val nonExistentId = ObjectId()
+        val cells = List(31) { List(4) { CellData(mutableStateOf("")) } }
+        
+        assertFailsWith<IllegalStateException> {
+            repository.updateSpreadsheet(
+                id = nonExistentId,
+                type = "schedule1",
+                columnNames = listOf("Col1"),
+                cells = cells,
+                name = "Non-existent Doc",
+                databaseName = testDatabase,
+                collectionName = testCollection
+            )
+        }
+    }
+
+    @Test
+    fun `test load document from non-existent collection`() = runBlocking {
+        val id = ObjectId()
+        val loadedDoc = repository.loadDocument(
+            id,
+            testDatabase,
+            "non_existent_collection_${System.currentTimeMillis()}"
+        )
+        assertNull(loadedDoc)
+    }
+
+    @Test
+    fun `test save document with high cell content`() = runBlocking {
+        val largeContent = "A".repeat(1000)  // Test with 1000 character string
+        val cells = List(31) { List(4) { CellData(mutableStateOf(largeContent)) } }
+        val docName = "Large Content Test ${System.currentTimeMillis()}"
+        
+        val id = repository.saveSpreadsheet(
+            type = "schedule1",
+            columnNames = listOf("Col1"),
+            cells = cells,
+            name = docName,
+            databaseName = testDatabase,
+            collectionName = testCollection
+        )
+        
+        val loadedDoc = repository.loadDocument(id, testDatabase, testCollection)
+        assertNotNull(loadedDoc)
+        assertEquals(largeContent, loadedDoc.cells[0][0])
+    }
+
+    @Test
+    fun `test delete document by name`() = runBlocking {
+        // First create a document
+        val cells = List(31) { List(4) { CellData(mutableStateOf("test")) } }
+        val docName = "Delete Test ${System.currentTimeMillis()}"
+        
+        val id = repository.saveSpreadsheet(
+            type = "schedule1",
+            columnNames = listOf("Col1"),
+            cells = cells,
+            name = docName,
+            databaseName = testDatabase,
+            collectionName = testCollection
+        )
+        
+        // Verify document exists
+        var loadedDoc = repository.loadDocument(id, testDatabase, testCollection)
+        assertNotNull(loadedDoc)
+        
+        // Delete the document
+        val deleteResult = repository.deleteDocumentByName(testDatabase, testCollection, docName)
+        assertTrue(deleteResult)
+        
+        // Verify document no longer exists
+        loadedDoc = repository.loadDocument(id, testDatabase, testCollection)
+        assertNull(loadedDoc)
+        
+        // Try to delete non-existent document
+        val secondDeleteResult = repository.deleteDocumentByName(testDatabase, testCollection, "non-existent-doc")
+        assertFalse(secondDeleteResult)
+    }
+
+    @Test
+    fun `test delete collection`() = runBlocking {
+        // Create a new collection
+        val tempCollection = "temp_collection_${System.currentTimeMillis()}"
+        val created = repository.createCollection(testDatabase, tempCollection)
+        assertTrue(created)
+        
+        // Add a document to the collection
+        val cells = List(31) { List(4) { CellData(mutableStateOf("test")) } }
+        repository.saveSpreadsheet(
+            type = "schedule1",
+            columnNames = listOf("Col1"),
+            cells = cells,
+            name = "Test Doc",
+            databaseName = testDatabase,
+            collectionName = tempCollection
+        )
+        
+        // Verify collection exists
+        var collections = repository.getCollectionNames(testDatabase)
+        assertTrue(collections.contains(tempCollection))
+        
+        // Delete the collection
+        val deleteResult = repository.deleteCollection(testDatabase, tempCollection)
+        assertTrue(deleteResult)
+        
+        // Verify collection no longer exists
+        collections = repository.getCollectionNames(testDatabase)
+        assertFalse(collections.contains(tempCollection))
+    }
 }

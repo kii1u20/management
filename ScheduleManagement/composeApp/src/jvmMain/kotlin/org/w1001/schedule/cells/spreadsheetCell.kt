@@ -37,7 +37,7 @@ fun spreadsheetCell(
     enabled: Boolean = true,
     cornerRadius: Dp = 0.dp // Default corner radius
 ) {
-    var textFieldValue by remember(cellData.content.value) {
+    var textFieldValue by remember {
         mutableStateOf(
             TextFieldValue(
                 text = cellData.content.value,

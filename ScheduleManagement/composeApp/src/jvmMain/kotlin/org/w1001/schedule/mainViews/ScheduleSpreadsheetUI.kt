@@ -24,6 +24,7 @@ import org.w1001.schedule.cells.calcCell
 import org.w1001.schedule.cells.mergedCell
 import org.w1001.schedule.cells.spreadsheetCell
 import org.w1001.schedule.components.*
+import java.math.BigDecimal
 
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
 
@@ -228,7 +229,7 @@ private fun ScheduleRow(
     columns: Int,
     workTime: Int,
     onCellSelected: (CellData) -> Unit,
-    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>,
     viewModel: AppViewModel
 ) {
     val groupSize = remember { if (workTime == 1) 2 else 4 }
@@ -313,7 +314,7 @@ fun createDayCell(cellData: CellData) {
 
 @Composable
 fun createCalcCell(
-    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>,
     group: Int,
     i: Int,
     cells: List<List<CellData>>,
@@ -325,8 +326,8 @@ fun createCalcCell(
     // Insert the calculated cell (which is not editable).
     if (workTime == 1) {
         val simpleCalc = CalcStep.Calculation(
-            CalcStep.CellValue(CellRef(i, group * groupSize)),
             CalcStep.CellValue(CellRef(i, group * groupSize + 1)),
+            CalcStep.CellValue(CellRef(i, group * groupSize)),
             MinusOperation()
         )
         calcCell(
@@ -338,13 +339,13 @@ fun createCalcCell(
     } else {
         val complexCalc = CalcStep.Calculation(
             CalcStep.Calculation(
-                CalcStep.CellValue(CellRef(i, group * groupSize)),
                 CalcStep.CellValue(CellRef(i, group * groupSize + 1)),
+                CalcStep.CellValue(CellRef(i, group * groupSize)),
                 MinusOperation()
             ),
             CalcStep.Calculation(
-                CalcStep.CellValue(CellRef(i, group * groupSize + 2)),
                 CalcStep.CellValue(CellRef(i, group * groupSize + 3)),
+                CalcStep.CellValue(CellRef(i, group * groupSize + 2)),
                 MinusOperation()
             ),
             PlusOperation()

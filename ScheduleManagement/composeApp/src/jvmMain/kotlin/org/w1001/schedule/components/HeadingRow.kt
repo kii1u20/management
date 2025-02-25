@@ -18,13 +18,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.w1001.schedule.DocumentState
 import org.w1001.schedule.mainViews.cellSize
+import java.math.BigDecimal
 
 @Composable
 fun HeadingRow(
     workTime: Int,
     columns: Int,
     horizontalScrollState: ScrollState,
-    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>,
     docState: DocumentState.ScheduleState
 ) {
     if (workTime == 1) {
@@ -83,7 +84,7 @@ private fun ColumnBox(
     columns: Int,
     workTime: Int,
     fontSizeMultiplier: Int,
-    calcCellBindings: HashMap<Int, MutableList<MutableState<Int>>>,
+    calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>,
     docState: DocumentState.ScheduleState
 ) {
     val width = if (workTime == 1) cellSize.value.width * 3 else cellSize.value.width * 5 + 5.dp

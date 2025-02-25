@@ -14,9 +14,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w1001.schedule.CalcStep
 import org.w1001.schedule.CellData
 import org.w1001.schedule.MathEngine.Companion.evaluateStep
+import java.math.BigDecimal
 
 val specialCharMap = mapOf(
-    "A" to 8,
+    "A" to BigDecimal ("8"),
     // Add other special characters and their values here
 )
 
@@ -31,7 +32,7 @@ fun calcCell(
     textColor: Color = Color.Black,
     calculation: CalcStep,
     cells: List<List<CellData>>,
-    resultBinding: MutableState<Int>? = null // new binding parameter
+    resultBinding: MutableState<BigDecimal>? = null // new binding parameter
 ) {
     Cell(
         modifier = modifier,
@@ -46,7 +47,7 @@ fun calcCell(
             evaluateStep(calculation, cells)
         } catch (e: Exception) {
             logger.error { e.stackTraceToString() }
-            0
+            BigDecimal.ZERO
         }
 
         resultBinding?.value = result

@@ -6,6 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.bson.types.ObjectId
 import org.w1001.schedule.database.SpreadsheetDocument
 import org.w1001.schedule.database.SpreadsheetRepository
+import java.math.BigDecimal
 
 data class CellData(var content: MutableState<String>, var isSelected: MutableState<Boolean> = mutableStateOf(false))
 
@@ -46,6 +47,14 @@ class AppViewModel {
         name: String,
         isSchedule1: Boolean
     ) {
+        val columnsInt = columns.toIntOrNull() ?: 0
+        if (columnsInt <= 0) {
+            logger.error { "Invalid number of columns: $columns" }
+            throw IllegalArgumentException("Invalid number of columns passed to createNewSchedule in AppViewModel.kt: $columns")
+        } else if (name.isEmpty()) {
+            logger.error { "Invalid name: $name" }
+            throw IllegalArgumentException("Invalid name passed to createNewSchedule in AppViewModel.kt: $name")
+        }
         val scheduleState = DocumentState.ScheduleState(
             documentName = mutableStateOf(name),
             numberOfColumns = mutableStateOf(columns),
@@ -128,10 +137,10 @@ class AppViewModel {
     }
 
     //Can be a second hashmap of rowIndex to MutableSate<Int> if needed
-    private fun createCalcBindings(columns: Int): HashMap<Int, MutableList<MutableState<Int>>> {
-        return hashMapOf<Int, MutableList<MutableState<Int>>>().apply {
+    private fun createCalcBindings(columns: Int): HashMap<Int, MutableList<MutableState<BigDecimal>>> {
+        return hashMapOf<Int, MutableList<MutableState<BigDecimal>>>().apply {
             for (group in 0 until columns) {
-                this[group] = MutableList(31) { mutableStateOf(0) }
+                this[group] = MutableList(31) { mutableStateOf(BigDecimal("0.0")) }
             }
         }
     }
@@ -147,6 +156,10 @@ class AppViewModel {
     suspend fun saveDocument() {
         isSaving = true
         try {
+            if (currentDatabase.isEmpty() || currentCollection.isEmpty()) {
+                logger.error { "Database or collection name is empty" }
+                throw IllegalStateException("Database or collection name is empty")
+            }
             when (val state = _documentState.value) {
                 is DocumentState.ScheduleState -> saveScheduleDocument(state)
                 DocumentState.Empty -> throw IllegalStateException("Cannot save empty document")

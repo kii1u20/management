@@ -136,4 +136,48 @@ class AppViewModelTest {
             viewModel.loadDocument(document)
         }
     }
+
+    @Test
+    fun `test create new schedule with zero columns`() {
+        val columnNames = SnapshotStateList<MutableState<String>>()
+        assertFailsWith<IllegalArgumentException> {
+            viewModel.createNewSchedule("0", columnNames, "Test Schedule", true)
+        }
+    }
+
+    @Test
+    fun `test create new schedule with negative columns`() {
+        val columnNames = SnapshotStateList<MutableState<String>>()
+        assertFailsWith<IllegalArgumentException> {
+            viewModel.createNewSchedule("-1", columnNames, "Test Schedule", true)
+        }
+    }
+
+    @Test
+    fun `test create new schedule with non-numeric column count`() {
+        val columnNames = SnapshotStateList<MutableState<String>>()
+        assertFailsWith<IllegalArgumentException> {
+            viewModel.createNewSchedule("abc", columnNames, "Test Schedule", true)
+        }
+    }
+
+    @Test
+    fun `test create new schedule with empty name`() {
+        val columnNames = SnapshotStateList<MutableState<String>>()
+        assertFailsWith<IllegalArgumentException> {
+            viewModel.createNewSchedule("3", columnNames, "", true)
+        }
+    }
+
+    @Test
+    fun `test save document without database or collection`() {
+        viewModel.createNewSchedule("3", SnapshotStateList(), "New Doc", true)
+        viewModel.currentDatabase = ""
+        viewModel.currentCollection = ""
+        runBlocking {
+            assertFailsWith<IllegalStateException> {
+                viewModel.saveDocument()
+            }
+        }
+    }
 }

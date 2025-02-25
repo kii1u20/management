@@ -7,7 +7,7 @@ plugins {
     id("dev.hydraulic.conveyor") version "1.12"
 }
 
-version = "0.2.0" // a.b.c = major.minor.patch
+version = "0.3.0" // a.b.c = major.minor.patch
 
 kotlin {
     jvm {
