@@ -267,5 +267,9 @@ class SpreadsheetRepositoryTest {
         // Verify collection no longer exists
         collections = repository.getCollectionNames(testDatabase)
         assertFalse(collections.contains(tempCollection))
+        
+        // Try to delete non-existent collection
+        val secondDeleteResult = repository.deleteCollection(testDatabase, "non-existent-collection")
+        assertFalse(secondDeleteResult)
     }
 }
