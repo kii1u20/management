@@ -16,34 +16,29 @@ import java.util.concurrent.TimeUnit
 
 class SpreadsheetRepository {
     private val logger = KotlinLogging.logger("SpreadsheetRepository.kt")
-    //MongoDB Atlas backend connection string
-    private val connectionString =
-        "mongodb+srv://ivanovikristian01:hBL5k2xzhg943z3s@cluster0.ckezs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    //Azure CosmosDB for MongoDB backend connection string
-//    private val connectionString =
-//        "mongodb://managementapp:KdfhqDIK0oLdoYZ7vJby9QC7l0cqFRdGRPXENb3ofz89BeMCPrgqqVZrJ8kdcJCQASGaFbiuRfwRACDbMQDmkw==@managementapp.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@managementapp@"
-//    private val client = MongoClient.create(connectionString)
-    //----------------------------------- With custom timeouts -----------------------------------
-    private val settings = MongoClientSettings.builder()
-        .applyConnectionString(ConnectionString(connectionString))
-        .applyToSocketSettings { builder ->
-            builder.connectTimeout(8, TimeUnit.SECONDS)
-            builder.readTimeout(8, TimeUnit.SECONDS)
-        }
-        .applyToServerSettings { builder ->
-            builder.heartbeatFrequency(10, TimeUnit.SECONDS)
-            builder.minHeartbeatFrequency(500, TimeUnit.MILLISECONDS)
-        }
-        .applyToClusterSettings { builder ->
-            builder.serverSelectionTimeout(8, TimeUnit.SECONDS)
-        }
-        .build()
+    private var client: MongoClient? = null
 
-    private val client = MongoClient.create(settings)
-    //----------------------------------- With custom timeouts -----------------------------------
+    fun initRepository(connectionString: String) {
+        val settings = MongoClientSettings.builder()
+            .applyConnectionString(ConnectionString(connectionString))
+            .applyToSocketSettings { builder ->
+                builder.connectTimeout(8, TimeUnit.SECONDS)
+                builder.readTimeout(8, TimeUnit.SECONDS)
+            }
+            .applyToServerSettings { builder ->
+                builder.heartbeatFrequency(10, TimeUnit.SECONDS)
+                builder.minHeartbeatFrequency(500, TimeUnit.MILLISECONDS)
+            }
+            .applyToClusterSettings { builder ->
+                builder.serverSelectionTimeout(8, TimeUnit.SECONDS)
+            }
+            .build()
+        client = MongoClient.create(settings)
+    }
 
     private suspend fun createUniqueNameIndex(databaseName: String, collectionName: String) {
-        val database = client.getDatabase(databaseName)
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        val database = client!!.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)
         collection.createIndex(Indexes.ascending("name"), IndexOptions().unique(true))
     }
@@ -58,7 +53,8 @@ class SpreadsheetRepository {
     ): ObjectId {
 //        ensureUniqueNameIndex(databaseName, collectionName)
         try {
-            val database: MongoDatabase = client.getDatabase(databaseName)
+            if (client == null) throw IllegalStateException("No MongoDB connection string available")
+            val database: MongoDatabase = client!!.getDatabase(databaseName)
             val collection = database.getCollection<SpreadsheetDocument>(collectionName)
             val flattenedCells = cells.map { row ->
                 row.map { it.content.value }
@@ -92,7 +88,8 @@ class SpreadsheetRepository {
         databaseName: String,
         collectionName: String
     ) {
-        val database: MongoDatabase = client.getDatabase(databaseName)
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        val database: MongoDatabase = client!!.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)
 
         val flattenedCells = cells.map { row ->
@@ -118,7 +115,8 @@ class SpreadsheetRepository {
     }
 
     suspend fun loadDocuments(databaseName: String, collectionName: String): List<SpreadsheetDocument> {
-        val database: MongoDatabase = client.getDatabase(databaseName)
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        val database: MongoDatabase = client!!.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)
         return collection.find().toList()
     }
@@ -127,14 +125,19 @@ class SpreadsheetRepository {
         databaseName: String,
         collectionName: String
     ): List<DocumentMetadata> {
-        val database: MongoDatabase = client.getDatabase(databaseName)
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        val database: MongoDatabase = client!!.getDatabase(databaseName)
         val collection = database.getCollection<DocumentMetadata>(collectionName)
 
         return collection.find()
-            .projection(org.bson.Document(mapOf(
-                "_id" to 1,
-                "name" to 1
-            )))
+            .projection(
+                org.bson.Document(
+                    mapOf(
+                        "_id" to 1,
+                        "name" to 1
+                    )
+                )
+            )
             .toList()
     }
 
@@ -143,13 +146,15 @@ class SpreadsheetRepository {
         databaseName: String,
         collectionName: String
     ): SpreadsheetDocument? {
-        val database: MongoDatabase = client.getDatabase(databaseName)
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        val database: MongoDatabase = client!!.getDatabase(databaseName)
         val collection = database.getCollection<SpreadsheetDocument>(collectionName)
         return collection.find(org.bson.Document("_id", id)).firstOrNull()
     }
 
     suspend fun getDatabases(): List<String> {
-        return client.listDatabaseNames()
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        return client!!.listDatabaseNames()
             .toList()
             .filter { it != "admin" && it != "local" }
     }
@@ -162,12 +167,14 @@ class SpreadsheetRepository {
 //    }
 
     suspend fun getCollectionNames(databaseName: String): List<String> {
-        val database: MongoDatabase = client.getDatabase(databaseName)
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        val database: MongoDatabase = client!!.getDatabase(databaseName)
         return database.listCollectionNames().toList().sorted()
     }
 
     suspend fun createCollection(databaseName: String, collectionName: String): Boolean {
-        val database: MongoDatabase = client.getDatabase(databaseName)
+        if (client == null) throw IllegalStateException("No MongoDB connection string available")
+        val database: MongoDatabase = client!!.getDatabase(databaseName)
         return try {
             // Check if collection already exists
             val collections = database.listCollectionNames().toList()
@@ -186,7 +193,8 @@ class SpreadsheetRepository {
 
     suspend fun deleteDocumentByName(databaseName: String, collectionName: String, documentName: String): Boolean {
         return try {
-            val database = client.getDatabase(databaseName)
+            if (client == null) throw IllegalStateException("No MongoDB connection string available")
+            val database = client!!.getDatabase(databaseName)
             val collection = database.getCollection<SpreadsheetDocument>(collectionName)
             val result = collection.deleteOne(org.bson.Document("name", documentName))
             return result.deletedCount > 0
@@ -198,7 +206,8 @@ class SpreadsheetRepository {
 
     suspend fun deleteCollection(databaseName: String, collectionName: String): Boolean {
         return try {
-            val database = client.getDatabase(databaseName)
+            if (client == null) throw IllegalStateException("No MongoDB connection string available")
+            val database = client!!.getDatabase(databaseName)
             database.getCollection<SpreadsheetDocument>(collectionName).drop()
             true
         } catch (e: Exception) {

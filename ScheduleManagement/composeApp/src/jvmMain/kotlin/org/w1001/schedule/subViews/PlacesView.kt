@@ -13,6 +13,7 @@ import com.mongodb.MongoSocketException
 import com.mongodb.MongoTimeoutException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
+import org.w1001.schedule.CredentialManager
 import org.w1001.schedule.components.WarningDialog
 import org.w1001.schedule.components.mainMenu.MainMenuGrid
 import org.w1001.schedule.components.mainMenu.MainMenuTopBar
@@ -64,11 +65,11 @@ fun PlacesView(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         MainMenuTopBar(
-            onBack = {},
+            onBack = { CredentialManager.deleteConnectionString() },
             onCreate = {},
             heading = "Моля, изберете обект",
             createButtonVisible = false,
-            backButtonVisible = false
+            backButtonVisible = true
         )
 
         when {

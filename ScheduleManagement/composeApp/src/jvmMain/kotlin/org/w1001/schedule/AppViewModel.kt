@@ -3,6 +3,10 @@ package org.w1001.schedule
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import org.w1001.schedule.database.SpreadsheetDocument
 import org.w1001.schedule.database.SpreadsheetRepository
@@ -28,13 +32,34 @@ class AppViewModel {
     var currentDatabase by mutableStateOf("")
     var currentCollection by mutableStateOf("")
 
-    val repository = SpreadsheetRepository()
+    lateinit var repository:SpreadsheetRepository
+    var isRepositoryInitialized by mutableStateOf(false)
+
     val specialMergeSet = hashSetOf("A", "B", "C")
 
     val fontSize: MutableState<Float> = mutableStateOf(14f)
     val enableAutoFontSize: MutableState<Boolean> = mutableStateOf(true)
 
     private val logger = KotlinLogging.logger("AppViewModel.kt")
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    init {
+        scope.launch {
+            CredentialManager.hasCredentialsFlow.collect { hasCredentials ->
+                if (hasCredentials) {
+                    createRepository()
+                } else { isRepositoryInitialized = false }
+            }
+        }
+    }
+
+    private fun createRepository() {
+        val connString = CredentialManager.getConnectionString() ?: return
+        repository = SpreadsheetRepository()
+        repository.initRepository(connString)
+        isRepositoryInitialized = ::repository.isInitialized
+    }
 
     fun clearDocumentState() {
         _documentState.value = DocumentState.Empty

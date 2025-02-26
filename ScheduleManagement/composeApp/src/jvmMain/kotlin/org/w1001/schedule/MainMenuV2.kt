@@ -4,6 +4,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import org.w1001.schedule.AppViewModel
 import org.w1001.schedule.subViews.CollectionView
+import org.w1001.schedule.subViews.ConnectionStringView
 import org.w1001.schedule.subViews.OpenedCollectionView
 import org.w1001.schedule.subViews.PlacesView
 
@@ -14,6 +15,12 @@ fun MainMenuV2(
 ) {
     var selectedPlace by remember { mutableStateOf<String?>(null) }
     var selectedCollection by remember { mutableStateOf<String?>(null) }
+
+    if (!viewModel.isRepositoryInitialized) {
+        ConnectionStringView()
+        return
+    }
+
 
     AnimatedContent(
         targetState = Triple(selectedPlace, selectedCollection, null),
