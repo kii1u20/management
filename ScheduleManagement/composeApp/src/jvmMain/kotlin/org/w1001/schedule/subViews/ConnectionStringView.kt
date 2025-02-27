@@ -21,6 +21,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.w1001.schedule.CredentialManager
 import org.w1001.schedule.components.mainMenu.MainMenuTopBar
+import org.w1001.schedule.viewModel
 
 private val logger = KotlinLogging.logger("ConnectionStringView.kt")
 
@@ -119,7 +120,7 @@ fun ConnectionStringView() {
                                         testSuccess = true
                                         CredentialManager.storeConnectionString(connectionString)
                                     } else {
-                                        errorMessage = "Connection test failed. Please check your connection string."
+                                        errorMessage = "Неуспешна връзка. Моля, проверете въведения адрес"
                                     }
                                 } catch (e: Exception) {
                                     logger.error { e.stackTraceToString() }
@@ -183,7 +184,12 @@ fun ConnectionStringView() {
 }
 
 private suspend fun testConnectionString(connectionString: String): Boolean {
-    // Simulate connection test
+    // First check internet availability
+    if (!viewModel.isInternetAvailable()) {
+        throw IllegalStateException("Няма връзка с интернет")
+    }
+
+    // Then check connection string format
     return connectionString.startsWith("mongodb") &&
             connectionString.contains("@") &&
             connectionString.contains(".")

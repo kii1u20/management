@@ -3,14 +3,14 @@ package org.w1001.schedule
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.bson.types.ObjectId
 import org.w1001.schedule.database.SpreadsheetDocument
 import org.w1001.schedule.database.SpreadsheetRepository
 import java.math.BigDecimal
+import javax.swing.JOptionPane
+import javax.swing.SwingUtilities
+import kotlin.system.exitProcess
 
 data class CellData(var content: MutableState<String>, var isSelected: MutableState<Boolean> = mutableStateOf(false))
 
@@ -45,11 +45,40 @@ class AppViewModel {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
+        SwingUtilities.invokeAndWait {
+            runBlocking {
+                if (!isInternetAvailable()) {
+                    JOptionPane.showMessageDialog(
+                        null,
+                        "Няма връзка с интернет. Проверете връзката и опитайте отново",
+                        "Connection Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                    exitProcess(1)
+                }
+            }
+        }
         scope.launch {
             CredentialManager.hasCredentialsFlow.collect { hasCredentials ->
                 if (hasCredentials) {
                     createRepository()
-                } else { isRepositoryInitialized = false }
+                } else {
+                    isRepositoryInitialized = false
+                }
+            }
+        }
+    }
+
+    suspend fun isInternetAvailable(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val socket = java.net.Socket()
+                val socketAddress = java.net.InetSocketAddress("8.8.8.8", 53)
+                socket.connect(socketAddress, 3000) // 3 seconds timeout
+                socket.close()
+                true
+            } catch (e: Exception) {
+                false
             }
         }
     }
