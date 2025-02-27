@@ -28,7 +28,10 @@ import org.w1001.schedule.viewModel
 
 @Composable
 fun InfoPane(
-    modifier: Modifier = Modifier, cellSize: MutableState<DpSize>, onSave: () -> Unit,
+    modifier: Modifier = Modifier, 
+    cellSize: MutableState<DpSize>, 
+    onSave: () -> Unit,
+    onPrint: () -> Unit = {}, // Add default empty lambda for backward compatibility
     viewModel: AppViewModel
 ) {
     val showExitDialog = remember { mutableStateOf(false) }
@@ -80,6 +83,11 @@ fun InfoPane(
 
         Button(onClick = onSave) {
             Text("Save")
+        }
+        
+        // Add Print button
+        Button(onClick = onPrint) {
+            Text("Print")
         }
 
 //        fontScaler() //mergeCell, calcCell and headingRow are not set up for auto scaling yet

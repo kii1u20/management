@@ -24,6 +24,7 @@ import org.w1001.schedule.cells.calcCell
 import org.w1001.schedule.cells.mergedCell
 import org.w1001.schedule.cells.spreadsheetCell
 import org.w1001.schedule.components.*
+import org.w1001.schedule.SpreadsheetPrinter
 import java.math.BigDecimal
 
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
@@ -212,6 +213,14 @@ fun ScheduleSpreadsheetUI(
                                 }
                                 viewModel.isSaving = false
                             }
+                        }
+                    },
+                    onPrint = {
+                        val state = viewModel.documentState.value
+                        if (state is DocumentState.ScheduleState) {
+                            SpreadsheetPrinter.printSpreadsheet(state)
+                        } else {
+                            errorMessage = "No document is open for printing"
                         }
                     },
                     modifier = Modifier.weight(0.2f)
