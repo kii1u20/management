@@ -217,11 +217,7 @@ fun ScheduleSpreadsheetUI(
                     },
                     onPrint = {
                         val state = viewModel.documentState.value
-                        if (state is DocumentState.ScheduleState) {
-                            SpreadsheetPrinter.printSpreadsheet(state)
-                        } else {
-                            errorMessage = "No document is open for printing"
-                        }
+                        SpreadsheetPrinter.printDocument(state)
                     },
                     modifier = Modifier.weight(0.2f)
                 )
