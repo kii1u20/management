@@ -57,7 +57,7 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
         private val dayColumnWidth = 30
         private val calcColumnWidth = 40
         private val pageHeaderHeight = 60
-        private val margin = 50
+        private val baseMargin = 50
         private val columnSpacing = 10 // Define explicit spacing between columns
         private val normalFontSize = 12 // Increased from 10
         private val headerFontSize = 14 // Increased from 10
@@ -72,27 +72,21 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
 
             val printableWidth = pageFormat.imageableWidth.toInt()
             val printableHeight = pageFormat.imageableHeight.toInt()
-
+            
+            val rowsPerPage = (printableHeight - pageHeaderHeight) / cellHeight
+            val totalRows = docState.cells.size
+            
             // Calculate column width including spacing
             val columnGroupWidth = (cellWidth * groupSize) + calcColumnWidth + 
                 (if (workTime == 2) 5 else 0) + columnSpacing
             
-            // Calculate how many columns fit on a page
-            // We need to account for the day column and left margin
-            val availableWidthForColumns = printableWidth - margin - dayColumnWidth - columnSpacing
-            val columnsPerPage = (availableWidthForColumns / columnGroupWidth).toInt()
+            // Calculate how many columns fit on the page using the full printable width
+            // minus margins on both sides
+            val availableWidth = printableWidth - (baseMargin * 2)
+            val columnsPerPage = (availableWidth / columnGroupWidth).coerceAtLeast(1).toInt()
             
-            if (columnsPerPage <= 0) {
-                // If we can't fit even one column, we should adjust cell sizes
-                logger.warn { "Cannot fit any columns on the page. Consider reducing cell width." }
-                return Printable.NO_SUCH_PAGE
-            }
-            
-            // Calculate total number of pages needed
-            val rowsPerPage = (printableHeight - pageHeaderHeight) / cellHeight
-            val totalRows = docState.cells.size
+            // Calculate total number of pages needed for rows and columns
             val totalColumns = docState.numberOfColumns.value.toInt()
-            
             val totalColumnPages = (totalColumns + columnsPerPage - 1) / columnsPerPage
             val totalRowPages = (totalRows + rowsPerPage - 1) / rowsPerPage
             val totalPages = totalColumnPages * totalRowPages
@@ -112,28 +106,36 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             
             val startColumn = columnPageIndex * columnsPerPage
             val endColumn = min((columnPageIndex + 1) * columnsPerPage, totalColumns)
+            val columnsOnThisPage = endColumn - startColumn
             
-            // Print the document title/header, centered
+            // Calculate total width needed for data columns only
+            val dataColumnsWidth = columnsOnThisPage * columnGroupWidth - columnSpacing
+            
+            // Center data columns in the available printable width
+            val dataColumnsStartX = (printableWidth - dataColumnsWidth) / 2
+            
+            // Position day column to the left of the centered data columns
+            val dayColumnX = dataColumnsStartX - dayColumnWidth - columnSpacing
+            
+            // Print the document title/header, centered across entire page width
             g2d.font = Font("Arial", Font.BOLD, 16)
             val titleText = docState.documentName.value
             val titleFontMetrics = g2d.fontMetrics
             val titleWidth = titleFontMetrics.stringWidth(titleText)
-            val titleX = margin + (printableWidth - margin * 2 - titleWidth) / 2
+            val titleX = (printableWidth - titleWidth) / 2
             g2d.drawString(titleText, titleX, 30)
             
-            // Print column headers
+            // Calculate vertical measurements for headers
             g2d.font = Font("Arial", Font.BOLD, headerFontSize)
             val headerFontMetrics = g2d.fontMetrics
-            
-            // Calculate vertical measurements for headers
             val bgHeight = headerFontMetrics.height + (headerPadding * 2)
             val bgY = headerYPosition - headerFontMetrics.ascent - headerPadding
             
-            // Always print "Day" header on all pages
-            printDayHeader(g2d, headerFontMetrics, bgY, bgHeight)
+            // Print "Day" header
+            printDayHeader(g2d, headerFontMetrics, bgY, bgHeight, dayColumnX)
             
-            // Start position for data columns - add spacing after day column
-            var xPosition = margin + dayColumnWidth + columnSpacing
+            // Start position for data columns
+            var xPosition = dataColumnsStartX
             
             // Print column headers for this page's columns
             for (colIdx in startColumn until endColumn) {
@@ -149,11 +151,11 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             for (rowIdx in startRow until endRow) {
                 val yPosition = pageHeaderHeight + (rowIdx - startRow) * cellHeight
                 
-                // Always print day cell on all pages
-                printDayCell(g2d, rowIdx, yPosition, fontMetrics)
+                // Print day cell
+                printDayCell(g2d, rowIdx, yPosition, fontMetrics, dayColumnX)
                 
                 // Reset xPosition for data cells
-                xPosition = margin + dayColumnWidth + columnSpacing
+                xPosition = dataColumnsStartX
                 
                 // Print this page's columns for the current row
                 for (colGroup in startColumn until endColumn) {
@@ -169,11 +171,12 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             return Printable.PAGE_EXISTS
         }
         
-        private fun printDayHeader(g2d: Graphics2D, fontMetrics: FontMetrics, bgY: Int, bgHeight: Int) {
+        // Update the functions to accept the dynamic margin
+        private fun printDayHeader(g2d: Graphics2D, fontMetrics: FontMetrics, bgY: Int, bgHeight: Int, margin: Int) {
             val dayHeader = "Day"
             val dayHeaderWidth = fontMetrics.stringWidth(dayHeader)
             
-            // Draw day header background
+            // Draw day header background with dynamic margin
             g2d.color = headerBackgroundColor
             g2d.fillRoundRect(
                 margin,
@@ -188,6 +191,19 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             val dayHeaderX = margin + (dayColumnWidth - dayHeaderWidth) / 2
             g2d.color = Color.BLACK
             g2d.drawString(dayHeader, dayHeaderX, headerYPosition)
+        }
+        
+        private fun printDayCell(g2d: Graphics2D, rowIdx: Int, yPosition: Int, fontMetrics: FontMetrics, margin: Int) {
+            // Draw day cell with dynamic margin
+            g2d.drawRect(margin, yPosition, dayColumnWidth, cellHeight)
+            
+            // Center text in day cell
+            val dayCellText = docState.dayCellsData[rowIdx].content.value
+            val dayTextWidth = fontMetrics.stringWidth(dayCellText)
+            val dayTextX = margin + (dayColumnWidth - dayTextWidth) / 2
+            val textY = yPosition + (cellHeight - fontMetrics.height) / 2 + fontMetrics.ascent
+            
+            g2d.drawString(dayCellText, dayTextX, textY)
         }
         
         private fun printColumnHeader(
@@ -240,19 +256,6 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             val calcCellCenterX = calcCellX + (calcColumnWidth / 2)
             val sumX = calcCellCenterX - (sumWidth / 2)
             g2d.drawString(sumText, sumX, headerYPosition)
-        }
-        
-        private fun printDayCell(g2d: Graphics2D, rowIdx: Int, yPosition: Int, fontMetrics: FontMetrics) {
-            // Draw day cell
-            g2d.drawRect(margin, yPosition, dayColumnWidth, cellHeight)
-            
-            // Center text in day cell
-            val dayCellText = docState.dayCellsData[rowIdx].content.value
-            val dayTextWidth = fontMetrics.stringWidth(dayCellText)
-            val dayTextX = margin + (dayColumnWidth - dayTextWidth) / 2
-            val textY = yPosition + (cellHeight - fontMetrics.height) / 2 + fontMetrics.ascent
-            
-            g2d.drawString(dayCellText, dayTextX, textY)
         }
         
         private fun printRowCells(
