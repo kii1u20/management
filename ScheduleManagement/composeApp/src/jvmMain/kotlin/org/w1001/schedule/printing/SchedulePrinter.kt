@@ -66,6 +66,10 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
         private val headerPadding = 1 // Padding around text in headers
         private val headerYPosition = 50 // Adjusted to be closer to data cells
 
+        // Constants for signature fields
+        private val signatureHeight = 20
+        private val signatureSpacing = 10
+
         override fun print(graphics: Graphics, pageFormat: PageFormat, pageIndex: Int): Int {
             val g2d = graphics as Graphics2D
             g2d.translate(pageFormat.imageableX, pageFormat.imageableY)
@@ -160,6 +164,23 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
                 // Print this page's columns for the current row
                 for (colGroup in startColumn until endColumn) {
                     xPosition = printRowCells(g2d, rowIdx, colGroup, xPosition, yPosition, fontMetrics)
+                }
+            }
+            
+            // Draw signature fields at the bottom for the last row page 
+            // (each column page will have signatures)
+            if (rowPageIndex == totalRowPages - 1) {
+                val signatureY = pageHeaderHeight + (endRow - startRow) * cellHeight + signatureSpacing * 3
+                
+                // Remove the separator line that was causing the "weird line"
+                
+                // Reset xPosition for signature fields
+                xPosition = dataColumnsStartX
+                
+                // Print signature fields for each column on this page
+                for (colIdx in startColumn until endColumn) {
+                    printSignatureField(g2d, xPosition, signatureY, colIdx)
+                    xPosition += columnGroupWidth
                 }
             }
             
@@ -319,6 +340,47 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             xPosition += calcColumnWidth + columnSpacing
             
             return xPosition
+        }
+
+        /**
+         * Prints a simple signature line for a column
+         */
+        private fun printSignatureField(
+            g2d: Graphics2D,
+            xPos: Int,
+            yPos: Int,
+            colIdx: Int
+        ) {
+            // Calculate total width for the signature line, including calc cell
+            val columnWidth = cellWidth * groupSize
+            val gapWidth = if (workTime == 2) 5 else 0
+            
+            // Full width including data cells, calc cell and any internal spacing
+            val fullWidth = columnWidth + gapWidth + calcColumnWidth
+            
+            // Just draw a signature line - no text or labels
+            g2d.drawLine(
+                xPos,
+                yPos,
+                xPos + fullWidth,
+                yPos
+            )
+            
+            // Optional: Draw a very small marker at the end of the line
+            g2d.drawLine(
+                xPos + fullWidth,
+                yPos - 3,
+                xPos + fullWidth,
+                yPos + 3
+            )
+
+            // Draw a matching marker at the start of the line
+            g2d.drawLine(
+                xPos,
+                yPos - 3,
+                xPos,
+                yPos + 3
+            )
         }
     }
 }
