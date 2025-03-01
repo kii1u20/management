@@ -2,10 +2,7 @@ package org.w1001.schedule.printing
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w1001.schedule.DocumentState
-import java.awt.Color
-import java.awt.Font
-import java.awt.Graphics
-import java.awt.Graphics2D
+import java.awt.*
 import java.awt.print.PageFormat
 import java.awt.print.Printable
 import java.awt.print.PrinterException
@@ -76,18 +73,46 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             val printableWidth = pageFormat.imageableWidth.toInt()
             val printableHeight = pageFormat.imageableHeight.toInt()
 
-            val rowsPerPage = (printableHeight - pageHeaderHeight) / cellHeight
-            val totalRows = docState.cells.size
-
-            // Calculate if we have pages left to print
-            if (pageIndex * rowsPerPage >= totalRows) {
+            // Calculate column width including spacing
+            val columnGroupWidth = (cellWidth * groupSize) + calcColumnWidth + 
+                (if (workTime == 2) 5 else 0) + columnSpacing
+            
+            // Calculate how many columns fit on a page
+            // We need to account for the day column and left margin
+            val availableWidthForColumns = printableWidth - margin - dayColumnWidth - columnSpacing
+            val columnsPerPage = (availableWidthForColumns / columnGroupWidth).toInt()
+            
+            if (columnsPerPage <= 0) {
+                // If we can't fit even one column, we should adjust cell sizes
+                logger.warn { "Cannot fit any columns on the page. Consider reducing cell width." }
                 return Printable.NO_SUCH_PAGE
             }
-
-            // Calculate which rows to print on this page
-            val startRow = pageIndex * rowsPerPage
-            val endRow = min((pageIndex + 1) * rowsPerPage, totalRows)
-
+            
+            // Calculate total number of pages needed
+            val rowsPerPage = (printableHeight - pageHeaderHeight) / cellHeight
+            val totalRows = docState.cells.size
+            val totalColumns = docState.numberOfColumns.value.toInt()
+            
+            val totalColumnPages = (totalColumns + columnsPerPage - 1) / columnsPerPage
+            val totalRowPages = (totalRows + rowsPerPage - 1) / rowsPerPage
+            val totalPages = totalColumnPages * totalRowPages
+            
+            // Determine current page's position in the grid
+            val columnPageIndex = pageIndex / totalRowPages
+            val rowPageIndex = pageIndex % totalRowPages
+            
+            // Check if this page exists
+            if (columnPageIndex >= totalColumnPages || pageIndex >= totalPages) {
+                return Printable.NO_SUCH_PAGE
+            }
+            
+            // Calculate which rows and columns to display on this page
+            val startRow = rowPageIndex * rowsPerPage
+            val endRow = min((rowPageIndex + 1) * rowsPerPage, totalRows)
+            
+            val startColumn = columnPageIndex * columnsPerPage
+            val endColumn = min((columnPageIndex + 1) * columnsPerPage, totalColumns)
+            
             // Print the document title/header, centered
             g2d.font = Font("Arial", Font.BOLD, 16)
             val titleText = docState.documentName.value
@@ -95,25 +120,60 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             val titleWidth = titleFontMetrics.stringWidth(titleText)
             val titleX = margin + (printableWidth - margin * 2 - titleWidth) / 2
             g2d.drawString(titleText, titleX, 30)
-
+            
             // Print column headers
             g2d.font = Font("Arial", Font.BOLD, headerFontSize)
             val headerFontMetrics = g2d.fontMetrics
-
-            // Calculate the vertical centering measurements
-            val headerTextHeight = headerFontMetrics.height
-            val headerTextAscent = headerFontMetrics.ascent
-
-            // Background needs to be positioned to align with text
-            val bgHeight = headerTextHeight + (headerPadding * 2)
-            val bgY = headerYPosition - headerTextAscent - headerPadding
-
-            // Print "Day" header with proper centering
+            
+            // Calculate vertical measurements for headers
+            val bgHeight = headerFontMetrics.height + (headerPadding * 2)
+            val bgY = headerYPosition - headerFontMetrics.ascent - headerPadding
+            
+            // Always print "Day" header on all pages
+            printDayHeader(g2d, headerFontMetrics, bgY, bgHeight)
+            
+            // Start position for data columns - add spacing after day column
+            var xPosition = margin + dayColumnWidth + columnSpacing
+            
+            // Print column headers for this page's columns
+            for (colIdx in startColumn until endColumn) {
+                printColumnHeader(g2d, colIdx, xPosition, headerFontMetrics, bgY, bgHeight)
+                // Move to next column group
+                xPosition += columnGroupWidth
+            }
+            
+            // Print the rows for this page
+            g2d.font = Font("Arial", Font.PLAIN, normalFontSize)
+            val fontMetrics = g2d.fontMetrics
+            
+            for (rowIdx in startRow until endRow) {
+                val yPosition = pageHeaderHeight + (rowIdx - startRow) * cellHeight
+                
+                // Always print day cell on all pages
+                printDayCell(g2d, rowIdx, yPosition, fontMetrics)
+                
+                // Reset xPosition for data cells
+                xPosition = margin + dayColumnWidth + columnSpacing
+                
+                // Print this page's columns for the current row
+                for (colGroup in startColumn until endColumn) {
+                    xPosition = printRowCells(g2d, rowIdx, colGroup, xPosition, yPosition, fontMetrics)
+                }
+            }
+            
+            // Draw page information
+            g2d.font = Font("Arial", Font.ITALIC, 8)
+            val pageInfo = "Page ${pageIndex + 1} of $totalPages (Row page ${rowPageIndex + 1}/${totalRowPages}, Column page ${columnPageIndex + 1}/${totalColumnPages})"
+            g2d.drawString(pageInfo, printableWidth - 200, printableHeight - 10)
+            
+            return Printable.PAGE_EXISTS
+        }
+        
+        private fun printDayHeader(g2d: Graphics2D, fontMetrics: FontMetrics, bgY: Int, bgHeight: Int) {
             val dayHeader = "Day"
-            val dayHeaderWidth = headerFontMetrics.stringWidth(dayHeader)
-
-            // Position day header background exactly matching the day column width
-            // Draw properly centered background for day header
+            val dayHeaderWidth = fontMetrics.stringWidth(dayHeader)
+            
+            // Draw day header background
             g2d.color = headerBackgroundColor
             g2d.fillRoundRect(
                 margin,
@@ -123,141 +183,139 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
                 cornerRadius,
                 cornerRadius
             )
-
+            
             // Center the text within the background
             val dayHeaderX = margin + (dayColumnWidth - dayHeaderWidth) / 2
             g2d.color = Color.BLACK
             g2d.drawString(dayHeader, dayHeaderX, headerYPosition)
-
-            // Start position for data columns - add spacing after day column
-            var xPosition = margin + dayColumnWidth + columnSpacing
-
-            for (colIdx in 0 until columns) {
-                // Get column name with colon
-                val columnName = if (colIdx < docState.columnNames.size) {
-                    docState.columnNames[colIdx].value + ":"
+        }
+        
+        private fun printColumnHeader(
+            g2d: Graphics2D, 
+            colIdx: Int, 
+            xPos: Int, 
+            fontMetrics: FontMetrics,
+            bgY: Int,
+            bgHeight: Int
+        ) {
+            // Get column name with colon
+            val columnName = if (colIdx < docState.columnNames.size) {
+                docState.columnNames[colIdx].value + ":"
+            } else {
+                "Column ${colIdx + 1}:"
+            }
+            
+            // Calculate the sum for this column
+            val sum = docState.calcCellBindings[colIdx]?.sumOf { it.value } ?: BigDecimal.ZERO
+            val sumText = sum.toString()
+            
+            // Calculate positions and widths
+            val columnWidth = cellWidth * groupSize
+            
+            // Calculate total width for the column group
+            val totalGroupWidth = columnWidth + calcColumnWidth + 
+                (if (workTime == 2) 5 else 0) // Include the 5dp space for workTime==2
+            
+            // Draw a unified background for the entire column group
+            g2d.color = headerBackgroundColor
+            g2d.fillRoundRect(
+                xPos,
+                bgY,
+                totalGroupWidth,
+                bgHeight,
+                cornerRadius,
+                cornerRadius
+            )
+            g2d.color = Color.BLACK
+            
+            // Position the column name in the center of the data cells
+            val textWidth = fontMetrics.stringWidth(columnName)
+            val dataCellsCenterX = xPos + (columnWidth / 2)
+            val textX = dataCellsCenterX - (textWidth / 2)
+            g2d.drawString(columnName, textX, headerYPosition)
+            
+            // Position the sum text in the center of the calc cell
+            val sumWidth = fontMetrics.stringWidth(sumText)
+            val calcCellX = xPos + columnWidth + (if (workTime == 2) 5 else 0)
+            val calcCellCenterX = calcCellX + (calcColumnWidth / 2)
+            val sumX = calcCellCenterX - (sumWidth / 2)
+            g2d.drawString(sumText, sumX, headerYPosition)
+        }
+        
+        private fun printDayCell(g2d: Graphics2D, rowIdx: Int, yPosition: Int, fontMetrics: FontMetrics) {
+            // Draw day cell
+            g2d.drawRect(margin, yPosition, dayColumnWidth, cellHeight)
+            
+            // Center text in day cell
+            val dayCellText = docState.dayCellsData[rowIdx].content.value
+            val dayTextWidth = fontMetrics.stringWidth(dayCellText)
+            val dayTextX = margin + (dayColumnWidth - dayTextWidth) / 2
+            val textY = yPosition + (cellHeight - fontMetrics.height) / 2 + fontMetrics.ascent
+            
+            g2d.drawString(dayCellText, dayTextX, textY)
+        }
+        
+        private fun printRowCells(
+            g2d: Graphics2D, 
+            rowIdx: Int, 
+            colGroup: Int, 
+            startX: Int, 
+            yPosition: Int,
+            fontMetrics: FontMetrics
+        ): Int {
+            var xPosition = startX
+            val textY = yPosition + (cellHeight - fontMetrics.height) / 2 + fontMetrics.ascent
+            
+            // Print data cells for this column group
+            for (idx in 0 until groupSize) {
+                val cellIdx = colGroup * groupSize + idx
+                val cellContent = if (cellIdx < docState.cells[rowIdx].size) {
+                    docState.cells[rowIdx][cellIdx].content.value
+                } else ""
+                
+                // Special merge handling
+                if (cellContent in setOf("A", "B", "C")) {
+                    val mergedCellWidth = cellWidth * groupSize
+                    g2d.drawRect(xPosition, yPosition, mergedCellWidth, cellHeight)
+                    
+                    // Center text in merged cell
+                    val textWidth = fontMetrics.stringWidth(cellContent)
+                    val textX = xPosition + (mergedCellWidth - textWidth) / 2
+                    
+                    g2d.drawString(cellContent, textX, textY)
+                    xPosition += mergedCellWidth
+                    break
                 } else {
-                    "Column ${colIdx + 1}:"
+                    g2d.drawRect(xPosition, yPosition, cellWidth, cellHeight)
+                    
+                    // Center text in regular cell
+                    val textWidth = fontMetrics.stringWidth(cellContent)
+                    val textX = xPosition + (cellWidth - textWidth) / 2
+                    
+                    g2d.drawString(cellContent, textX, textY)
+                    xPosition += cellWidth
                 }
-
-                // Calculate the sum for this column
-                val sum = docState.calcCellBindings[colIdx]?.sumOf { it.value } ?: BigDecimal.ZERO
-                val sumText = sum.toString()
-
-                // Calculate positions and widths
-                val columnWidth = cellWidth * groupSize
-
-                // Calculate total width for the column group
-                val totalGroupWidth = columnWidth + calcColumnWidth +
-                        (if (workTime == 2) 5 else 0) // Include the 5dp space for workTime==2
-
-                // Draw a unified background for the entire column group
-                g2d.color = headerBackgroundColor
-                g2d.fillRoundRect(
-                    xPosition,
-                    bgY,
-                    totalGroupWidth,
-                    bgHeight,
-                    cornerRadius,
-                    cornerRadius
-                )
-                g2d.color = Color.BLACK
-
-                // Position the column name in the center of the data cells
-                val textWidth = headerFontMetrics.stringWidth(columnName)
-                val dataCellsCenterX = xPosition + (columnWidth / 2)
-                val textX = dataCellsCenterX - (textWidth / 2)
-                g2d.drawString(columnName, textX, headerYPosition)
-
-                // Position the sum text in the center of the calc cell
-                val sumWidth = headerFontMetrics.stringWidth(sumText)
-                val calcCellX = xPosition + columnWidth + (if (workTime == 2) 5 else 0)
-                val calcCellCenterX = calcCellX + (calcColumnWidth / 2)
-                val sumX = calcCellCenterX - (sumWidth / 2)
-                g2d.drawString(sumText, sumX, headerYPosition)
-
-                // Move to next column group
-                xPosition += totalGroupWidth + columnSpacing
-            }
-
-            // Print the rows
-            g2d.font = Font("Arial", Font.PLAIN, normalFontSize)
-            val fontMetrics = g2d.fontMetrics
-
-            for (rowIdx in startRow until endRow) {
-                val yPosition = pageHeaderHeight + (rowIdx - startRow) * cellHeight
-
-                // Draw day cell
-                g2d.drawRect(margin, yPosition, dayColumnWidth, cellHeight)
-
-                // Center text in day cell
-                val dayCellText = docState.dayCellsData[rowIdx].content.value
-                val dayTextWidth = fontMetrics.stringWidth(dayCellText)
-                val dayTextX = margin + (dayColumnWidth - dayTextWidth) / 2
-                val textY = yPosition + (cellHeight - fontMetrics.height) / 2 + fontMetrics.ascent
-
-                g2d.drawString(dayCellText, dayTextX, textY)
-
-                // Draw data cells and calc cells
-                // Start position with spacing after day column
-                xPosition = margin + dayColumnWidth + columnSpacing
-
-                for (colGroup in 0 until columns) {
-                    for (idx in 0 until groupSize) {
-                        val cellIdx = colGroup * groupSize + idx
-                        val cellContent = if (cellIdx < docState.cells[rowIdx].size) {
-                            docState.cells[rowIdx][cellIdx].content.value
-                        } else ""
-
-                        // Special merge handling
-                        if (cellContent in setOf("A", "B", "C")) {
-                            val mergedCellWidth = cellWidth * groupSize
-                            g2d.drawRect(xPosition, yPosition, mergedCellWidth, cellHeight)
-
-                            // Center text in merged cell
-                            val textWidth = fontMetrics.stringWidth(cellContent)
-                            val textX = xPosition + (mergedCellWidth - textWidth) / 2
-
-                            g2d.drawString(cellContent, textX, textY)
-                            xPosition += mergedCellWidth
-                            break
-                        } else {
-                            g2d.drawRect(xPosition, yPosition, cellWidth, cellHeight)
-
-                            // Center text in regular cell
-                            val textWidth = fontMetrics.stringWidth(cellContent)
-                            val textX = xPosition + (cellWidth - textWidth) / 2
-
-                            g2d.drawString(cellContent, textX, textY)
-                            xPosition += cellWidth
-                        }
-
-                        // Add gap between pairs in workTime == 2
-                        if (workTime == 2 && idx == groupSize / 2 - 1) {
-                            xPosition += 5
-                        }
-                    }
-
-                    // Draw calc cell
-                    g2d.drawRect(xPosition, yPosition, calcColumnWidth, cellHeight)
-                    val calcValue = docState.calcCellBindings[colGroup]?.get(rowIdx)?.value ?: BigDecimal.ZERO
-                    val calcText = calcValue.toString()
-
-                    // Center text in calc cell
-                    val textWidth = fontMetrics.stringWidth(calcText)
-                    val textX = xPosition + (calcColumnWidth - textWidth) / 2
-
-                    g2d.drawString(calcText, textX, textY)
-
-                    xPosition += calcColumnWidth + columnSpacing
+                
+                // Add gap between pairs in workTime == 2
+                if (workTime == 2 && idx == groupSize / 2 - 1) {
+                    xPosition += 5
                 }
             }
-
-            // Draw page number
-            g2d.font = Font("Arial", Font.ITALIC, 8)
-            g2d.drawString("Page ${pageIndex + 1}", printableWidth - 50, printableHeight - 10)
-
-            return Printable.PAGE_EXISTS
+            
+            // Draw calc cell
+            g2d.drawRect(xPosition, yPosition, calcColumnWidth, cellHeight)
+            val calcValue = docState.calcCellBindings[colGroup]?.get(rowIdx)?.value ?: BigDecimal.ZERO
+            val calcText = calcValue.toString()
+            
+            // Center text in calc cell
+            val textWidth = fontMetrics.stringWidth(calcText)
+            val textX = xPosition + (calcColumnWidth - textWidth) / 2
+            
+            g2d.drawString(calcText, textX, textY)
+            
+            xPosition += calcColumnWidth + columnSpacing
+            
+            return xPosition
         }
     }
 }
