@@ -40,6 +40,12 @@ class AppViewModel {
     val fontSize: MutableState<Float> = mutableStateOf(14f)
     val enableAutoFontSize: MutableState<Boolean> = mutableStateOf(true)
 
+    // Print settings
+    var companyName by mutableStateOf("")
+    var storeName by mutableStateOf("")
+    val createdBy = "Ivan Ivanov" // Constant creator name
+    var showPrintDialog by mutableStateOf(false)
+
     private val logger = KotlinLogging.logger("AppViewModel.kt")
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -250,5 +256,17 @@ class AppViewModel {
             isDocumentLoaded = true
             logger.info { "Schedule Document saved: ${state.documentName.value} ; database: $currentDatabase ; collection: $currentCollection" }
         }
+    }
+
+    fun printCurrentDocument() {
+        showPrintDialog = true
+    }
+
+    fun executePrint(companyName: String, storeName: String) {
+        this.companyName = companyName
+        this.storeName = storeName
+
+        val state = documentState.value
+        SpreadsheetPrinter.printDocument(state)
     }
 }

@@ -31,7 +31,7 @@ fun InfoPane(
     modifier: Modifier = Modifier, 
     cellSize: MutableState<DpSize>, 
     onSave: () -> Unit,
-    onPrint: () -> Unit = {}, // Add default empty lambda for backward compatibility
+    onPrint: () -> Unit = {}, // This will now trigger showing the print dialog
     viewModel: AppViewModel
 ) {
     val showExitDialog = remember { mutableStateOf(false) }
@@ -50,6 +50,18 @@ fun InfoPane(
             showExitDialog = showExitDialog,
             viewModel = viewModel,
             errorMessage = errorMessage
+        )
+    }
+
+    if (viewModel.showPrintDialog) {
+        PrintDialog(
+            onDismiss = { viewModel.showPrintDialog = false },
+            onConfirm = { companyName, storeName ->
+                viewModel.showPrintDialog = false
+                viewModel.executePrint(companyName, storeName)
+            },
+            initialCompanyName = viewModel.companyName,
+            initialStoreName = viewModel.storeName
         )
     }
 
@@ -86,7 +98,9 @@ fun InfoPane(
         }
         
         // Add Print button
-        Button(onClick = onPrint) {
+        Button(onClick = {
+            viewModel.printCurrentDocument() // Updated to show dialog first
+        }) {
             Text("Print")
         }
 

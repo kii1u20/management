@@ -2,6 +2,7 @@ package org.w1001.schedule.printing
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w1001.schedule.DocumentState
+import org.w1001.schedule.viewModel
 import java.awt.*
 import java.awt.print.PageFormat
 import java.awt.print.Printable
@@ -16,8 +17,10 @@ private val logger = KotlinLogging.logger("SchedulePrinter")
 /**
  * Implementation of DocumentPrinter for ScheduleState documents
  */
-class SchedulePrinter(override val documentState: DocumentState.ScheduleState) : DocumentPrinter<DocumentState.ScheduleState> {
-    
+class SchedulePrinter(
+    override val documentState: DocumentState.ScheduleState,
+) : DocumentPrinter<DocumentState.ScheduleState> {
+
     override fun getJobName(): String = "Schedule Spreadsheet - ${documentState.documentName.value}"
     
     override fun print(): Boolean {
@@ -25,15 +28,18 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             val job = PrinterJob.getPrinterJob()
             job.setJobName(getJobName())
             
-            val printable = SchedulePrintable(documentState)
+            val printable = SchedulePrintable(
+                docState = documentState,
+                companyName = viewModel.companyName,
+                storeName = viewModel.storeName,
+                createdBy = viewModel.createdBy
+            )
             job.setPrintable(printable)
             
             if (job.printDialog()) {
                 job.print()
-                logger.info { "Printing job submitted successfully" }
                 return true
             } else {
-                logger.info { "Print job was cancelled by user" }
                 return true // User canceled, but no error
             }
         } catch (e: PrinterException) {
@@ -48,15 +54,19 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
         }
     }
 
-    private class SchedulePrintable(private val docState: DocumentState.ScheduleState) : Printable {
+    private class SchedulePrintable(
+        private val docState: DocumentState.ScheduleState,
+        private val companyName: String,
+        private val storeName: String,
+        private val createdBy: String
+    ) : Printable {
         private val workTime = docState.workTime.value
         private val cellWidth = 40
         private val cellHeight = 20
         private val groupSize = if (workTime == 1) 2 else 4
-        private val columns = docState.numberOfColumns.value.toInt()
         private val dayColumnWidth = 30
         private val calcColumnWidth = 40
-        private val pageHeaderHeight = 60
+        private val pageHeaderHeight = 30
         private val baseMargin = 50
         private val columnSpacing = 10 // Define explicit spacing between columns
         private val normalFontSize = 12 // Increased from 10
@@ -64,11 +74,12 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
         private val headerBackgroundColor = Color(230, 230, 230) // Light grey color for backgrounds
         private val cornerRadius = 8 // Corner radius for rounded rectangles
         private val headerPadding = 1 // Padding around text in headers
-        private val headerYPosition = 50 // Adjusted to be closer to data cells
 
         // Constants for signature fields
-        private val signatureHeight = 20
-        private val signatureSpacing = 10
+        private val signatureSpacing = 11
+
+        // Keep original pageHeaderHeight value but add a new constant for document header
+        private val documentHeaderHeight = 95  // Height needed for title, company, store, date info
 
         override fun print(graphics: Graphics, pageFormat: PageFormat, pageIndex: Int): Int {
             val g2d = graphics as Graphics2D
@@ -77,7 +88,8 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             val printableWidth = pageFormat.imageableWidth.toInt()
             val printableHeight = pageFormat.imageableHeight.toInt()
             
-            val rowsPerPage = (printableHeight - pageHeaderHeight) / cellHeight
+            // Adjust rows per page calculation to account for document header
+            val rowsPerPage = (printableHeight - documentHeaderHeight - pageHeaderHeight) / cellHeight
             val totalRows = docState.cells.size
             
             // Calculate column width including spacing
@@ -121,29 +133,27 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             // Position day column to the left of the centered data columns
             val dayColumnX = dataColumnsStartX - dayColumnWidth - columnSpacing
             
-            // Print the document title/header, centered across entire page width
-            g2d.font = Font("Arial", Font.BOLD, 16)
-            val titleText = docState.documentName.value
-            val titleFontMetrics = g2d.fontMetrics
-            val titleWidth = titleFontMetrics.stringWidth(titleText)
-            val titleX = (printableWidth - titleWidth) / 2
-            g2d.drawString(titleText, titleX, 30)
+            // Print the enhanced document header
+            printDocumentHeader(g2d, printableWidth)
             
-            // Calculate vertical measurements for headers
+            // Calculate vertical measurements for headers - adjust Y positions
             g2d.font = Font("Arial", Font.BOLD, headerFontSize)
             val headerFontMetrics = g2d.fontMetrics
             val bgHeight = headerFontMetrics.height + (headerPadding * 2)
+            
+            // Adjust the Y position for column headers to be below document header
+            val headerYPosition = documentHeaderHeight + 20  // Adjusted position
             val bgY = headerYPosition - headerFontMetrics.ascent - headerPadding
             
-            // Print "Day" header
-            printDayHeader(g2d, headerFontMetrics, bgY, bgHeight, dayColumnX)
+            // Print "Day" header at adjusted position
+            printDayHeader(g2d, headerFontMetrics, bgY, bgHeight, dayColumnX, headerYPosition)
             
             // Start position for data columns
             var xPosition = dataColumnsStartX
             
             // Print column headers for this page's columns
             for (colIdx in startColumn until endColumn) {
-                printColumnHeader(g2d, colIdx, xPosition, headerFontMetrics, bgY, bgHeight)
+                printColumnHeader(g2d, colIdx, xPosition, headerFontMetrics, bgY, bgHeight, headerYPosition)
                 // Move to next column group
                 xPosition += columnGroupWidth
             }
@@ -152,8 +162,9 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             g2d.font = Font("Arial", Font.PLAIN, normalFontSize)
             val fontMetrics = g2d.fontMetrics
             
+            // Adjust Y position for rows to start after document header + page header
             for (rowIdx in startRow until endRow) {
-                val yPosition = pageHeaderHeight + (rowIdx - startRow) * cellHeight
+                val yPosition = documentHeaderHeight + pageHeaderHeight + (rowIdx - startRow) * cellHeight
                 
                 // Print day cell
                 printDayCell(g2d, rowIdx, yPosition, fontMetrics, dayColumnX)
@@ -170,10 +181,8 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             // Draw signature fields at the bottom for the last row page 
             // (each column page will have signatures)
             if (rowPageIndex == totalRowPages - 1) {
-                val signatureY = pageHeaderHeight + (endRow - startRow) * cellHeight + signatureSpacing * 3
-                
-                // Remove the separator line that was causing the "weird line"
-                
+                val signatureY = documentHeaderHeight + pageHeaderHeight + (endRow - startRow) * cellHeight + signatureSpacing * 3
+
                 // Reset xPosition for signature fields
                 xPosition = dataColumnsStartX
                 
@@ -184,16 +193,23 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
                 }
             }
             
-            // Draw page information
-            g2d.font = Font("Arial", Font.ITALIC, 8)
-            val pageInfo = "Page ${pageIndex + 1} of $totalPages (Row page ${rowPageIndex + 1}/${totalRowPages}, Column page ${columnPageIndex + 1}/${totalColumnPages})"
-            g2d.drawString(pageInfo, printableWidth - 200, printableHeight - 10)
+//            // Draw page information
+//            g2d.font = Font("Arial", Font.ITALIC, 8)
+//            val pageInfo = "Page ${pageIndex + 1} of $totalPages (Row page ${rowPageIndex + 1}/${totalRowPages}, Column page ${columnPageIndex + 1}/${totalColumnPages})"
+//            g2d.drawString(pageInfo, printableWidth - 200, printableHeight - 10)
             
             return Printable.PAGE_EXISTS
         }
         
         // Update the functions to accept the dynamic margin
-        private fun printDayHeader(g2d: Graphics2D, fontMetrics: FontMetrics, bgY: Int, bgHeight: Int, margin: Int) {
+        private fun printDayHeader(
+            g2d: Graphics2D, 
+            fontMetrics: FontMetrics, 
+            bgY: Int, 
+            bgHeight: Int, 
+            margin: Int,
+            yPos: Int   // Add parameter for Y position
+        ) {
             val dayHeader = "Day"
             val dayHeaderWidth = fontMetrics.stringWidth(dayHeader)
             
@@ -211,7 +227,7 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             // Center the text within the background
             val dayHeaderX = margin + (dayColumnWidth - dayHeaderWidth) / 2
             g2d.color = Color.BLACK
-            g2d.drawString(dayHeader, dayHeaderX, headerYPosition)
+            g2d.drawString(dayHeader, dayHeaderX, yPos)
         }
         
         private fun printDayCell(g2d: Graphics2D, rowIdx: Int, yPosition: Int, fontMetrics: FontMetrics, margin: Int) {
@@ -233,7 +249,8 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             xPos: Int, 
             fontMetrics: FontMetrics,
             bgY: Int,
-            bgHeight: Int
+            bgHeight: Int,
+            yPos: Int   // Add parameter for Y position
         ) {
             // Get column name with colon
             val columnName = if (colIdx < docState.columnNames.size) {
@@ -269,14 +286,14 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
             val textWidth = fontMetrics.stringWidth(columnName)
             val dataCellsCenterX = xPos + (columnWidth / 2)
             val textX = dataCellsCenterX - (textWidth / 2)
-            g2d.drawString(columnName, textX, headerYPosition)
+            g2d.drawString(columnName, textX, yPos)
             
             // Position the sum text in the center of the calc cell
             val sumWidth = fontMetrics.stringWidth(sumText)
             val calcCellX = xPos + columnWidth + (if (workTime == 2) 5 else 0)
             val calcCellCenterX = calcCellX + (calcColumnWidth / 2)
             val sumX = calcCellCenterX - (sumWidth / 2)
-            g2d.drawString(sumText, sumX, headerYPosition)
+            g2d.drawString(sumText, sumX, yPos)
         }
         
         private fun printRowCells(
@@ -381,6 +398,38 @@ class SchedulePrinter(override val documentState: DocumentState.ScheduleState) :
                 xPos,
                 yPos + 3
             )
+        }
+
+        /**
+         * Prints the enhanced document header with all requested information
+         */
+        private fun printDocumentHeader(g2d: Graphics2D, pageWidth: Int) {
+            // Title - Schedule Document (unchanged)
+            g2d.font = Font("Arial", Font.BOLD, 18)
+            val titleText = "Schedule Document"
+            val titleFontMetrics = g2d.fontMetrics
+            val titleWidth = titleFontMetrics.stringWidth(titleText)
+            val titleX = (pageWidth - titleWidth) / 2
+            g2d.drawString(titleText, titleX, 25)
+            
+            // Company name
+            g2d.font = Font("Arial", Font.BOLD, 14)
+            val companyText = "Company: $companyName"
+            g2d.drawString(companyText, baseMargin, 45)
+            
+            // Store name
+            val storeText = "Store: $storeName"
+            g2d.drawString(storeText, baseMargin, 65)
+            
+            // Date (document name)
+            val dateText = "Date: ${docState.documentName.value}"
+            g2d.drawString(dateText, baseMargin, 85)
+            
+            // Created by
+            g2d.font = Font("Arial", Font.PLAIN, 12)
+            val creatorText = "Created by: $createdBy"
+            val creatorWidth = g2d.fontMetrics.stringWidth(creatorText)
+            g2d.drawString(creatorText, pageWidth - baseMargin - creatorWidth, 85)
         }
     }
 }
