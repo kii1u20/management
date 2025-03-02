@@ -12,5 +12,6 @@ data class SpreadsheetDocument(
     val type: String,
     val columnNames: List<String>,
     val cells: List<List<String>>,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val documentSettings: Map<String, String>// Flexible field for document settings
 )

@@ -53,18 +53,6 @@ fun InfoPane(
         )
     }
 
-    if (viewModel.showPrintDialog) {
-        PrintDialog(
-            onDismiss = { viewModel.showPrintDialog = false },
-            onConfirm = { companyName, storeName ->
-                viewModel.showPrintDialog = false
-                viewModel.executePrint(companyName, storeName)
-            },
-            initialCompanyName = viewModel.companyName,
-            initialStoreName = viewModel.storeName
-        )
-    }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)
@@ -99,7 +87,7 @@ fun InfoPane(
         
         // Add Print button
         Button(onClick = {
-            viewModel.printCurrentDocument() // Updated to show dialog first
+            onPrint() // Updated to show dialog first
         }) {
             Text("Print")
         }

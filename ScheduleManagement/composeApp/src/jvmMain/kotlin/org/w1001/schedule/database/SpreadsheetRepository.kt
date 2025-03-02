@@ -48,6 +48,7 @@ class SpreadsheetRepository {
         columnNames: List<String>,
         cells: List<List<CellData>>,
         name: String,
+        documentSettings: Map<String, String>,
         databaseName: String,
         collectionName: String
     ): ObjectId {
@@ -64,7 +65,8 @@ class SpreadsheetRepository {
                 type = type,
                 columnNames = columnNames,
                 cells = flattenedCells,
-                name = name
+                name = name,
+                documentSettings = documentSettings
             )
 
             collection.insertOne(document)
@@ -85,6 +87,7 @@ class SpreadsheetRepository {
         columnNames: List<String>,
         cells: List<List<CellData>>,
         name: String,
+        documentSettings: Map<String, String>,
         databaseName: String,
         collectionName: String
     ) {
@@ -101,7 +104,8 @@ class SpreadsheetRepository {
             type = type,
             columnNames = columnNames,
             cells = flattenedCells,
-            name = name
+            name = name,
+            documentSettings = documentSettings
         )
 
         val result = collection.replaceOne(

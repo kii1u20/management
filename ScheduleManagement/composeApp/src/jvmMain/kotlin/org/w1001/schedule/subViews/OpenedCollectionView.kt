@@ -68,7 +68,7 @@ fun OpenedCollectionView(
     if (showCreateDialog) {
         CreateDocumentDialog(
             onDismiss = { showCreateDialog = false },
-            onConfirm = { name, type, columns, columnNames ->
+            onConfirm = { name, type, columns, columnNames, documentSettings ->
                 coroutineScope.launch {
 //                    val success = repository.createCollection(place, name)
                     showCreateDialog = false
@@ -79,6 +79,7 @@ fun OpenedCollectionView(
                             columns = columns,
                             columnNames = columnNames.map { mutableStateOf(it) }.toMutableStateList(),
                             name = name,
+                            documentSettings = documentSettings,
                             isSchedule1 = type == "schedule1"
                         )
                         viewModel.currentDatabase = place

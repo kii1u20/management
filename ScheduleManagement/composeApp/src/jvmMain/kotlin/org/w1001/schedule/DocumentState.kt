@@ -12,7 +12,8 @@ sealed interface DocumentState {
         val workTime: MutableState<Int>,
         val cells: SnapshotStateList<SnapshotStateList<CellData>>,
         val dayCellsData: List<CellData>,
-        val calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>
+        val calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>,
+        val documentSettings: Map<String, String>
     ) : DocumentState
 
     object Empty : DocumentState

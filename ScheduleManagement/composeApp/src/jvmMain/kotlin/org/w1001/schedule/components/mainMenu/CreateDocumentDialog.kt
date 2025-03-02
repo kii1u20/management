@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateDocumentDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, type: String, columns: String, columnNames: List<String>) -> Unit,
+    onConfirm: (name: String, type: String, columns: String, columnNames: List<String>, documentSettings: Map<String, String>) -> Unit,
     documentTypes: List<String>,
     isUniqueName: (String) -> Boolean
 ) {
@@ -120,8 +120,8 @@ fun CreateDocumentDialog(
                     when (type) {
                         "schedule1", "schedule2" -> ScheduleCreateFlow(
                             onDismiss = { dismiss(onDismiss) },
-                            onConfirm = { name, columns, columnNames ->
-                                dismiss { onConfirm(name, type, columns, columnNames) }
+                            onConfirm = { name, columns, columnNames, documentSettings ->
+                                dismiss { onConfirm(name, type, columns, columnNames, documentSettings) }
                             },
                             isUniqueName = isUniqueName
                         )
@@ -146,14 +146,20 @@ fun CreateDocumentDialog(
 @Composable
 private fun ScheduleCreateFlow(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, columns: String, columnNames: List<String>) -> Unit,
+    onConfirm: (name: String, columns: String, columnNames: List<String>, documentSettings: Map<String, String>) -> Unit,
     isUniqueName: (String) -> Boolean
 ) {
     var name by remember { mutableStateOf("") }
     var columns by remember { mutableStateOf("1") }
     val columnNames = remember { mutableStateListOf("Column 1") }
+    val documentSettings = remember { mutableStateMapOf<String, String>() }
     var showError by remember { mutableStateOf(false) }
     val verticalScrollState = rememberScrollState()
+    
+    // Add state variables for company settings
+    var companyName by remember { mutableStateOf("") }
+    var storeName by remember { mutableStateOf("") }
+    var createdBy by remember { mutableStateOf("") }
 
     val columnCount by derivedStateOf {
         columns.toIntOrNull() ?: 1
@@ -169,6 +175,43 @@ private fun ScheduleCreateFlow(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
+//--------------------------------
+            OutlinedTextField(
+                value = companyName,
+                onValueChange = { 
+                    companyName = it
+                    documentSettings["companyName"] = it
+                },
+                label = { Text("Company Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = storeName,
+                onValueChange = { 
+                    storeName = it
+                    documentSettings["storeName"] = it
+                },
+                label = { Text("Store Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = createdBy,
+                onValueChange = { 
+                    createdBy = it
+                    documentSettings["createdBy"] = it
+                },
+                label = { Text("Created By") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+//--------------------------------
 
             OutlinedTextField(
                 value = columns,
@@ -270,7 +313,7 @@ private fun ScheduleCreateFlow(
                 Button(
                     onClick = {
                         if (!showError) {
-                            onConfirm(name, columns, columnNames)
+                            onConfirm(name, columns, columnNames, documentSettings)
                         }
                     },
                     enabled = !showError

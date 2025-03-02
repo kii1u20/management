@@ -40,12 +40,6 @@ class AppViewModel {
     val fontSize: MutableState<Float> = mutableStateOf(14f)
     val enableAutoFontSize: MutableState<Boolean> = mutableStateOf(true)
 
-    // Print settings
-    var companyName by mutableStateOf("")
-    var storeName by mutableStateOf("")
-    val createdBy = "Ivan Ivanov" // Constant creator name
-    var showPrintDialog by mutableStateOf(false)
-
     private val logger = KotlinLogging.logger("AppViewModel.kt")
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -105,6 +99,7 @@ class AppViewModel {
         columns: String,
         columnNames: SnapshotStateList<MutableState<String>>,
         name: String,
+        documentSettings: Map<String, String>,
         isSchedule1: Boolean
     ) {
         val columnsInt = columns.toIntOrNull() ?: 0
@@ -130,7 +125,8 @@ class AppViewModel {
             workTime = if (isSchedule1) mutableStateOf(1) else mutableStateOf(2),
             cells = createScheduleCells(columns.toInt(), isSchedule1),
             dayCellsData = createDayCellsData(),
-            calcCellBindings = createCalcBindings(columns.toInt())
+            calcCellBindings = createCalcBindings(columns.toInt()),
+            documentSettings = documentSettings
         )
 
         clearLoadedDocument()
@@ -166,7 +162,8 @@ class AppViewModel {
                 row.map { CellData(mutableStateOf(it)) }.toMutableStateList()
             }.toMutableStateList(),
             dayCellsData = createDayCellsData(),
-            calcCellBindings = createCalcBindings(columns.toInt())
+            calcCellBindings = createCalcBindings(columns.toInt()),
+            documentSettings = document.documentSettings
         )
 
         _documentState.value = scheduleState
@@ -240,6 +237,7 @@ class AppViewModel {
                 columnNames = state.columnNames.map { it.value },
                 cells = state.cells,
                 name = state.documentName.value,
+                documentSettings = state.documentSettings,
                 databaseName = currentDatabase,
                 collectionName = currentCollection
             )
@@ -250,23 +248,12 @@ class AppViewModel {
                 columnNames = state.columnNames.map { it.value },
                 cells = state.cells,
                 name = state.documentName.value,
+                documentSettings = state.documentSettings,
                 databaseName = currentDatabase,
                 collectionName = currentCollection
             )
             isDocumentLoaded = true
             logger.info { "Schedule Document saved: ${state.documentName.value} ; database: $currentDatabase ; collection: $currentCollection" }
         }
-    }
-
-    fun printCurrentDocument() {
-        showPrintDialog = true
-    }
-
-    fun executePrint(companyName: String, storeName: String) {
-        this.companyName = companyName
-        this.storeName = storeName
-
-        val state = documentState.value
-        SpreadsheetPrinter.printDocument(state)
     }
 }

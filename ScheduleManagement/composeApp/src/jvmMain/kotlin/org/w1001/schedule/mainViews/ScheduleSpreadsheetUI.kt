@@ -24,7 +24,6 @@ import org.w1001.schedule.cells.calcCell
 import org.w1001.schedule.cells.mergedCell
 import org.w1001.schedule.cells.spreadsheetCell
 import org.w1001.schedule.components.*
-import org.w1001.schedule.SpreadsheetPrinter
 import java.math.BigDecimal
 
 val cellSize = mutableStateOf(DpSize(50.dp, 25.dp))
@@ -216,8 +215,7 @@ fun ScheduleSpreadsheetUI(
                         }
                     },
                     onPrint = {
-                        val state = viewModel.documentState.value
-                        SpreadsheetPrinter.printDocument(state)
+                        SpreadsheetPrinter.printDocument(viewModel.documentState.value)
                     },
                     modifier = Modifier.weight(0.2f)
                 )

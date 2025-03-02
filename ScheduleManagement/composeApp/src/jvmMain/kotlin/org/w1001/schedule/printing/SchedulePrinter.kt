@@ -2,7 +2,6 @@ package org.w1001.schedule.printing
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w1001.schedule.DocumentState
-import org.w1001.schedule.viewModel
 import java.awt.*
 import java.awt.print.PageFormat
 import java.awt.print.Printable
@@ -30,9 +29,6 @@ class SchedulePrinter(
             
             val printable = SchedulePrintable(
                 docState = documentState,
-                companyName = viewModel.companyName,
-                storeName = viewModel.storeName,
-                createdBy = viewModel.createdBy
             )
             job.setPrintable(printable)
             
@@ -56,9 +52,6 @@ class SchedulePrinter(
 
     private class SchedulePrintable(
         private val docState: DocumentState.ScheduleState,
-        private val companyName: String,
-        private val storeName: String,
-        private val createdBy: String
     ) : Printable {
         private val workTime = docState.workTime.value
         private val cellWidth = 40
@@ -413,23 +406,30 @@ class SchedulePrinter(
             g2d.drawString(titleText, titleX, 25)
             
             // Company name
-            g2d.font = Font("Arial", Font.BOLD, 14)
-            val companyText = "Company: $companyName"
-            g2d.drawString(companyText, baseMargin, 45)
+            if (docState.documentSettings["companyName"]?.isBlank() == false) {
+                g2d.font = Font("Arial", Font.BOLD, 14)
+                val companyText = "Company: ${docState.documentSettings["companyName"]}"
+                g2d.drawString(companyText, baseMargin, 45)
+            }
+
             
             // Store name
-            val storeText = "Store: $storeName"
-            g2d.drawString(storeText, baseMargin, 65)
-            
+            if (docState.documentSettings["storeName"]?.isBlank() == false) {
+                val storeText = "Store: ${docState.documentSettings["storeName"]}"
+                g2d.drawString(storeText, baseMargin, 65)
+            }
+
             // Date (document name)
             val dateText = "Date: ${docState.documentName.value}"
             g2d.drawString(dateText, baseMargin, 85)
             
             // Created by
-            g2d.font = Font("Arial", Font.PLAIN, 12)
-            val creatorText = "Created by: $createdBy"
-            val creatorWidth = g2d.fontMetrics.stringWidth(creatorText)
-            g2d.drawString(creatorText, pageWidth - baseMargin - creatorWidth, 85)
+            if (docState.documentSettings["date"]?.isBlank() == false) {
+                g2d.font = Font("Arial", Font.PLAIN, 12)
+                val creatorText = "Created by: ${docState.documentSettings["createdBy"]}"
+                val creatorWidth = g2d.fontMetrics.stringWidth(creatorText)
+                g2d.drawString(creatorText, pageWidth - baseMargin - creatorWidth, 85)
+            }
         }
     }
 }
