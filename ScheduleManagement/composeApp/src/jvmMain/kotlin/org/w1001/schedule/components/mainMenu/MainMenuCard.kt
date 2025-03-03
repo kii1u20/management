@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -55,6 +56,7 @@ fun MainMenuCard(
             .graphicsLayer {
                 scaleX = scale.value
                 scaleY = scale.value
+                transformOrigin = TransformOrigin(0.5f, 0f)
             }
             .clip(RoundedCornerShape(8.dp))
             .padding(20.dp)
@@ -83,8 +85,9 @@ fun MainMenuCard(
 
             Text(
                 text = text,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = fontSize),
-                textAlign = TextAlign.Center
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = fontSize, lineHeight = fontSize * 1.1f),
+                textAlign = TextAlign.Center,
+                maxLines = 3
             )
 
             if (showDeleteButton) {
@@ -93,6 +96,7 @@ fun MainMenuCard(
                         scaleX = deleteButtonScale.value
                         scaleY = deleteButtonScale.value
                         alpha = deleteButtonScale.value
+                        transformOrigin = TransformOrigin(1f, 0f)
                     },
                     onClick = onDelete,
                     colors = ButtonDefaults.elevatedButtonColors(

@@ -78,7 +78,8 @@ fun MainMenuTopBar(
                 Text(
                     text = heading,
                     style = MaterialTheme.typography.headlineLarge.copy(
-                        fontSize = headingFontSize
+                        fontSize = headingFontSize,
+                        lineHeight = headingFontSize * 1.1f
                     ),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     textAlign = TextAlign.Center,

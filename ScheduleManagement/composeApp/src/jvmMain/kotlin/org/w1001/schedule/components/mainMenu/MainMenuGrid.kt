@@ -2,9 +2,9 @@ package org.w1001.schedule.components.mainMenu
 
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -51,7 +51,8 @@ fun MainMenuGrid(objects: List<String>, onObjectSelected: (String) -> Unit, onDe
                     text = obj,
                     onClick = { onObjectSelected(obj) },
                     modifier = Modifier
-                        .size(width = 200.dp, height = 200.dp)
+                        .aspectRatio(2f)
+//                        .size(width = 200.dp, height = 200.dp)
                         .animateItem(
                             fadeInSpec = null,
                             fadeOutSpec = null,
