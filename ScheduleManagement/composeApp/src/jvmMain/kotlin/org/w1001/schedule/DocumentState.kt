@@ -1,12 +1,17 @@
 package org.w1001.schedule
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import java.math.BigDecimal
 
-sealed interface DocumentState {
+sealed class DocumentState {
+    abstract val documentName: MutableState<String>
+    abstract val type: DocumentType?
+
     data class ScheduleState(
-        val documentName: MutableState<String>,
+        override val documentName: MutableState<String>,
+        override val type: DocumentType,
         val numberOfColumns: MutableState<String>,
         val columnNames: SnapshotStateList<MutableState<String>>,
         val workTime: MutableState<Int>,
@@ -14,9 +19,12 @@ sealed interface DocumentState {
         val dayCellsData: List<CellData>,
         val calcCellBindings: HashMap<Int, MutableList<MutableState<BigDecimal>>>,
         val documentSettings: Map<String, String>
-    ) : DocumentState
+    ) : DocumentState()
 
-    object Empty : DocumentState
+    data object Empty : DocumentState() {
+        override val documentName: MutableState<String> = mutableStateOf("")
+        override val type: DocumentType? = null
+    }
 }
 
 fun DocumentState.ScheduleState.getAdjacentCell(

@@ -10,8 +10,10 @@ import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
+import org.bson.codecs.configuration.CodecRegistries
 import org.bson.types.ObjectId
 import org.w1001.schedule.CellData
+import org.w1001.schedule.DocumentType
 import java.util.concurrent.TimeUnit
 
 class SpreadsheetRepository {
@@ -19,8 +21,14 @@ class SpreadsheetRepository {
     private var client: MongoClient? = null
 
     fun initRepository(connectionString: String) {
+        val codecRegistry = CodecRegistries.fromRegistries(
+            CodecRegistries.fromProviders(DocumentTypeCodecProvider()),
+            MongoClientSettings.getDefaultCodecRegistry()
+        )
+
         val settings = MongoClientSettings.builder()
             .applyConnectionString(ConnectionString(connectionString))
+            .codecRegistry(codecRegistry)
             .applyToSocketSettings { builder ->
                 builder.connectTimeout(8, TimeUnit.SECONDS)
                 builder.readTimeout(8, TimeUnit.SECONDS)
@@ -44,7 +52,7 @@ class SpreadsheetRepository {
     }
 
     suspend fun saveSpreadsheet(
-        type: String,
+        type: DocumentType,
         columnNames: List<String>,
         cells: List<List<CellData>>,
         name: String,
@@ -83,7 +91,7 @@ class SpreadsheetRepository {
 
     suspend fun updateSpreadsheet(
         id: ObjectId,
-        type: String,
+        type: DocumentType,
         columnNames: List<String>,
         cells: List<List<CellData>>,
         name: String,

@@ -45,7 +45,7 @@ fun OpenedCollectionView(
             documents = repository.loadDocumentMetadata(place, collection)
             documentNames = documents.mapTo(HashSet()) { it.name }
             viewModel.currentCollection = collection
-            viewModel.clearDocumentState()
+            viewModel.clearLoadedDocument()
             isLoading = false
         } catch (e: Exception) {
             logger.error { e.stackTraceToString() }
@@ -68,42 +68,7 @@ fun OpenedCollectionView(
     if (showCreateDialog) {
         CreateDocumentDialog(
             onDismiss = { showCreateDialog = false },
-            onConfirm = { name, type, columns, columnNames, documentSettings ->
-                coroutineScope.launch {
-//                    val success = repository.createCollection(place, name)
-                    showCreateDialog = false
-                    isSuccess = true
-
-                    val message = if (isSuccess) {
-                        viewModel.createNewSchedule(
-                            columns = columns,
-                            columnNames = columnNames.map { mutableStateOf(it) }.toMutableStateList(),
-                            name = name,
-                            documentSettings = documentSettings,
-                            isSchedule1 = type == "schedule1"
-                        )
-                        viewModel.currentDatabase = place
-                        viewModel.currentCollection = collection
-                        "Document created successfully"
-                    } else {
-                        "A document with this name already exists"
-                    }
-
-                    logger.info { message }
-
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = message,
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-
-//                    if (isSuccess) {
-//                        documents = repository.loadDocumentMetadata(place, collection, collection)
-//                    }
-                }
-            },
-            documentTypes = viewModel.documentTypes,
+            onConfirm = { viewModel.createNewDocument(it) },
             isUniqueName = { name -> !documentNames.contains(name) }
         )
     }

@@ -44,7 +44,7 @@ fun CollectionView(
             collectionNames = collections.mapTo(HashSet()) { it }
             viewModel.currentDatabase = place
             viewModel.currentCollection = ""
-            viewModel.clearDocumentState()
+            viewModel.clearLoadedDocument()
             isLoading = false
         } catch (e: Exception) {
             logger.error { e.stackTraceToString() }
@@ -171,7 +171,7 @@ fun CollectionView(
                                         collectionNames = collections.mapTo(HashSet()) { it }
                                         viewModel.currentDatabase = place
                                         viewModel.currentCollection = ""
-                                        viewModel.clearDocumentState()
+                                        viewModel.clearLoadedDocument()
                                     } catch (e: Exception) {
                                         logger.error { e.stackTraceToString() }
                                         errorMessage = when (e) {

@@ -16,7 +16,6 @@ data class CellData(var content: MutableState<String>, var isSelected: MutableSt
 
 class AppViewModel {
     var isSaving by mutableStateOf(false)
-    var documentTypes = mutableStateListOf("schedule1", "schedule2")
     var inMainMenu = mutableStateOf(true)
 
     // Document state
@@ -26,7 +25,6 @@ class AppViewModel {
     // Document metadata
     var currentDocumentId by mutableStateOf<ObjectId?>(null)
     var isDocumentLoaded by mutableStateOf(false)
-    var currentDocumentType by mutableStateOf<DocumentType?>(null)
 
     //Database metadata
     var currentDatabase by mutableStateOf("")
@@ -90,56 +88,19 @@ class AppViewModel {
         isRepositoryInitialized = ::repository.isInitialized
     }
 
-    fun clearDocumentState() {
-        _documentState.value = DocumentState.Empty
-        logger.info { "Document state cleared" }
-    }
-
-    fun createNewSchedule(
-        columns: String,
-        columnNames: SnapshotStateList<MutableState<String>>,
-        name: String,
-        documentSettings: Map<String, String>,
-        isSchedule1: Boolean
+    fun createNewDocument(
+        docState: DocumentState
     ) {
-        val columnsInt = columns.toIntOrNull() ?: 0
-        if (columnsInt <= 0) {
-            logger.error { "Invalid number of columns: $columns" }
-            throw IllegalArgumentException("Invalid number of columns passed to createNewSchedule in AppViewModel.kt: $columns")
-        } else if (name.isEmpty()) {
-            logger.error { "Invalid name: $name" }
-            throw IllegalArgumentException("Invalid name passed to createNewSchedule in AppViewModel.kt: $name")
-        }
-        val scheduleState = DocumentState.ScheduleState(
-            documentName = mutableStateOf(name),
-            numberOfColumns = mutableStateOf(columns),
-            columnNames = if (columnNames.isEmpty()) {
-                SnapshotStateList<MutableState<String>>().apply {
-                    for (i in 0 until columns.toInt()) {
-                        add(mutableStateOf("Column ${i + 1}"))
-                    }
-                }
-            } else {
-                columnNames
-            },
-            workTime = if (isSchedule1) mutableStateOf(1) else mutableStateOf(2),
-            cells = createScheduleCells(columns.toInt(), isSchedule1),
-            dayCellsData = createDayCellsData(),
-            calcCellBindings = createCalcBindings(columns.toInt()),
-            documentSettings = documentSettings
-        )
-
-        clearLoadedDocument()
-        _documentState.value = scheduleState
-        currentDocumentType = if (isSchedule1) DocumentType.Schedule1 else DocumentType.Schedule2
+        this.clearLoadedDocument()
+        _documentState.value = docState
         inMainMenu.value = false
-        logger.info { "New schedule document created" }
+        logger.info { "New document created successfully" }
     }
 
     fun loadDocument(document: SpreadsheetDocument) {
         when (document.type) {
-            "schedule1" -> loadScheduleDocument(document, true)
-            "schedule2" -> loadScheduleDocument(document, false)
+            DocumentType.Schedule1 -> loadScheduleDocument(document, true)
+            DocumentType.Schedule2 -> loadScheduleDocument(document, false)
             else -> throw IllegalArgumentException("Unknown document type: ${document.type}")
         }
     }
@@ -153,6 +114,7 @@ class AppViewModel {
 
         val scheduleState = DocumentState.ScheduleState(
             documentName = mutableStateOf(document.name),
+            type = document.type,
             numberOfColumns = mutableStateOf(columns),
             columnNames = SnapshotStateList<MutableState<String>>().apply {
                 addAll(document.columnNames.map { mutableStateOf(it) })
@@ -167,24 +129,10 @@ class AppViewModel {
         )
 
         _documentState.value = scheduleState
-        currentDocumentType = if (isSchedule1) DocumentType.Schedule1 else DocumentType.Schedule2
         isDocumentLoaded = true
         currentDocumentId = document.id
         inMainMenu.value = false
         logger.info { "Schedule Document loaded: ${document.name} ; database: $currentDatabase ; collection: $currentCollection" }
-    }
-
-    private fun createScheduleCells(
-        columns: Int,
-        isSchedule1: Boolean
-    ): SnapshotStateList<SnapshotStateList<CellData>> {
-        return List(31) { row ->
-            List(
-                if (isSchedule1) columns * 2 else columns * 4
-            ) { col ->
-                CellData(mutableStateOf(""))
-            }.toMutableStateList()
-        }.toMutableStateList()
     }
 
     private fun createDayCellsData(): List<CellData> {
@@ -205,7 +153,6 @@ class AppViewModel {
     fun clearLoadedDocument() {
         isDocumentLoaded = false
         currentDocumentId = null
-        currentDocumentType = null
         _documentState.value = DocumentState.Empty
         logger.info { "Loaded document cleared" }
     }
@@ -227,13 +174,10 @@ class AppViewModel {
     }
 
     private suspend fun saveScheduleDocument(state: DocumentState.ScheduleState) {
-        val isSchedule1 = currentDocumentType == DocumentType.Schedule1
-        val documentType = if (isSchedule1) "schedule1" else "schedule2"
-
         if (isDocumentLoaded && currentDocumentId != null) {
             repository.updateSpreadsheet(
                 id = currentDocumentId!!,
-                type = documentType,
+                type = state.type,
                 columnNames = state.columnNames.map { it.value },
                 cells = state.cells,
                 name = state.documentName.value,
@@ -243,8 +187,8 @@ class AppViewModel {
             )
             logger.info { "Schedule Document updated: ${state.documentName.value} ; database: $currentDatabase ; collection: $currentCollection" }
         } else {
-            currentDocumentId = repository.saveSpreadsheet(
-                type = documentType,
+            repository.saveSpreadsheet(
+                type = state.type,
                 columnNames = state.columnNames.map { it.value },
                 cells = state.cells,
                 name = state.documentName.value,

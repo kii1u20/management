@@ -7,7 +7,7 @@ plugins {
     id("dev.hydraulic.conveyor") version "1.12"
 }
 
-version = "0.5.1" // a.b.c = major.minor.patch`
+version = "0.6.0" // a.b.c = major.minor.patch`
 
 kotlin {
     jvm {
@@ -53,6 +53,9 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
+    }
+    sourceSets.jvmMain.dependencies {
+        implementation(kotlin("reflect"))
     }
 }
 
