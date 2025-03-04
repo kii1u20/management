@@ -167,9 +167,7 @@ fun titleBox(
         BasicTextField(
             value = documentName,
             onValueChange = { newName ->
-                if (viewModel.documentState.value is DocumentState.ScheduleState) {
-                    (viewModel.documentState.value as DocumentState.ScheduleState).documentName.value = newName
-                }
+                viewModel.documentState.value.documentName.value = newName
             },
             textStyle = LocalTextStyle.current.copy(
                 textAlign = TextAlign.Center,
