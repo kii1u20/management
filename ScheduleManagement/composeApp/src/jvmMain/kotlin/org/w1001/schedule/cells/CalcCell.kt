@@ -53,7 +53,7 @@ fun calcCell(
         resultBinding?.value = result
 
         Text(
-            result.toString(),
+            result.toPlainString(),
             textAlign = TextAlign.Center,
             fontSize = fontSize,
             style = MaterialTheme.typography.body1.copy(

@@ -2,6 +2,7 @@ package org.w1001.schedule.printing
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w1001.schedule.DocumentState
+import org.w1001.schedule.viewModel
 import java.awt.*
 import java.awt.print.PageFormat
 import java.awt.print.Printable
@@ -308,7 +309,7 @@ class SchedulePrinter(
                 } else ""
                 
                 // Special merge handling
-                if (cellContent in setOf("A", "B", "C")) {
+                if (cellContent in viewModel.specialMergeSet) {
                     val mergedCellWidth = cellWidth * groupSize
                     g2d.drawRect(xPosition, yPosition, mergedCellWidth, cellHeight)
                     
@@ -339,7 +340,7 @@ class SchedulePrinter(
             // Draw calc cell
             g2d.drawRect(xPosition, yPosition, calcColumnWidth, cellHeight)
             val calcValue = docState.calcCellBindings[colGroup]?.get(rowIdx)?.value ?: BigDecimal.ZERO
-            val calcText = calcValue.toString()
+            val calcText = calcValue.toPlainString()
             
             // Center text in calc cell
             val textWidth = fontMetrics.stringWidth(calcText)
